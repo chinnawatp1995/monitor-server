@@ -1,9 +1,9 @@
 export const createRequestQuery = (recs: any): string =>
-  `INSERT INTO request(time, service, machine_id, method, path, status_code, response_time, error_message) ` +
+  `INSERT INTO request(time, service, machine_id, method, path, status_code, response_time, error_message, controller) ` +
   `VALUES ${recs.values
     .map(
       (rec) =>
-        `('${rec.time}','${recs.tags[0]}', '${recs.tags[1]}', '${rec.method}', '${rec.path}', ${rec.statusCode}, ${rec.responseTime}, '${rec.errorMessage}')`,
+        `('${rec.time}','${recs.tags[0]}', '${recs.tags[1]}', '${rec.method}', '${rec.path}', ${rec.statusCode}, ${rec.responseTime}, '${rec.errorMessage}', '${rec.controller}')`,
     )
     .join(',')}`;
 

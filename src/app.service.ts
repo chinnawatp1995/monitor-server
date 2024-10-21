@@ -54,6 +54,7 @@ export class AppService {
                 statusCode: r[1],
                 responseTime: r[2],
                 errorMessage: r[3],
+                controller: r[4],
                 path: k,
               };
             });
