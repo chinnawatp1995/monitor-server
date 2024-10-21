@@ -26,8 +26,10 @@ export const createMemQuery = (recs: any): string =>
     .join(',')}`;
 
 export const createServerStatus = (recs: any): string =>
-  `INSERT INTO server_status(machine_id, status) ` +
-  `VALUES ${recs.map((v) => `('${v.machineId}', ${v.status})`).join(',')}`;
+  `INSERT INTO server_status(machine_id, status, service) ` +
+  `VALUES ${recs
+    .map((v) => `('${v.machineId}', ${v.status}, '${v.service}' )`)
+    .join(',')}`;
 
 /* ----------------------------------------------------------------------------------------------- */
 
@@ -225,6 +227,7 @@ export const serverTimeline = (
 ) =>
   `SELECT time, machine_id, status ` +
   `FROM server_status ` +
+  `WHERE time IN BETWEEN ${start} AND ${end} ` +
   ((machinesIds ?? []).length > 0
     ? `AND service IN (${machinesIds.map((s) => `'${s}'`).join(',')}) `
     : ``) +

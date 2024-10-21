@@ -108,15 +108,16 @@ export class AppService {
       console.log(...TRACK_STATUS.entries());
       const recs =
         [...TRACK_STATUS.entries()].map(([k, v]) => {
-          const [_, machineId] = k.split(':');
+          const [service, machineId] = k.split(':');
           return {
             machineId,
+            service,
             status: v,
           };
         }) ?? [];
       // console.log(recs);
       if (recs.length > 0) {
-        console.log(createServerStatus(recs));
+        // console.log(createServerStatus(recs));
         await this.pgClient.query({
           text: createServerStatus(recs),
         });
@@ -191,9 +192,9 @@ export class AppService {
 
   async getResponseAvgData(filterObj: TFilterReq) {
     const { startTime, endTime, resolution, services, machineIds } = filterObj;
-    console.log(
-      getResponseAvgQuery(startTime, endTime, resolution, services, machineIds),
-    );
+    // console.log(
+    //   getResponseAvgQuery(startTime, endTime, resolution, services, machineIds),
+    // );
     const records = (
       await this.pgClient.query({
         text: getResponseAvgQuery(
