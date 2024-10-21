@@ -29,12 +29,15 @@ export const createServerStatus = (recs: any): string =>
   `INSERT INTO server_status(machine_id, status) ` +
   `VALUES ${recs.map((v) => `('${v.machineId}', ${v.status})`).join(',')}`;
 
+/* ----------------------------------------------------------------------------------------------- */
+
 export const getRequestQuery = (
   start: string,
   end: string,
   timeBucket: string,
   services?: string[],
   machineIds?: string[],
+  controllers?: string[],
 ) =>
   `SELECT time_bucket('${timeBucket}', time) AS bucket, COUNT(*) AS total_requests, machine_id, service ` +
   `FROM request ` +
@@ -42,8 +45,11 @@ export const getRequestQuery = (
   ((services ?? []).length > 0
     ? `AND service IN (${services.map((s) => `'${s}'`).join(',')}) `
     : ``) +
-  (machineIds
+  ((machineIds ?? []).length > 0
     ? `AND machine_id IN (${machineIds.map((m) => `'${m}'`).join(',')}) `
+    : ``) +
+  ((controllers ?? []).length > 0
+    ? `AND machine_id IN (${controllers.map((m) => `'${m}'`).join(',')}) `
     : ``) +
   `GROUP BY bucket, machine_id, service ` +
   `ORDER BY bucket;`;
@@ -54,6 +60,7 @@ export const getResponseAvgQuery = (
   timeBucket: string,
   services?: string[],
   machineIds?: string[],
+  controllers?: string[],
 ) =>
   `SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(response_time) AS avg_response, machine_id, service ` +
   `FROM request ` +
@@ -64,6 +71,9 @@ export const getResponseAvgQuery = (
   ((machineIds ?? []).length > 0
     ? `AND machine_id IN (${machineIds.map((m) => `'${m}'`).join(',')}) `
     : ``) +
+  ((controllers ?? []).length > 0
+    ? `AND machine_id IN (${controllers.map((m) => `'${m}'`).join(',')}) `
+    : ``) +
   `GROUP BY bucket, machine_id, service ` +
   `ORDER BY bucket;`;
 
@@ -72,6 +82,7 @@ export const getResponseDistQuery = (
   end: string,
   resolution: string,
   services?: string[],
+  controllers?: string[],
 ) =>
   `SELECT time_bucket('${resolution}', time) AS bucket, machine_id, ` +
   `percentile_cont(0.1) WITHIN GROUP (ORDER BY response_time) AS p10, ` +
@@ -87,6 +98,9 @@ export const getResponseDistQuery = (
   `WHERE time BETWEEN '${start}' AND '${end}' ` +
   ((services ?? []).length > 0
     ? `AND service IN (${services.map((s) => `'${s}'`).join(',')}) `
+    : ``) +
+  ((controllers ?? []).length > 0
+    ? `AND machine_id IN (${controllers.map((m) => `'${m}'`).join(',')}) `
     : ``) +
   `GROUP BY bucket, machine_id ` +
   `ORDER BY bucket, machine_id;`;
@@ -136,6 +150,7 @@ export const getResponseTimePercentile = (
   end: string,
   resolution: string,
   services?: string[],
+  controllers?: string[],
 ) =>
   `
 WITH percentile_data AS (
@@ -155,6 +170,11 @@ WITH percentile_data AS (
     WHERE time BETWEEN '${start}' AND '${end}' ${
     (services ?? []).length > 0
       ? `AND service IN (${services.map((s) => `'${s}'`).join(',')}) `
+      : ``
+  }
+  ${
+    (controllers ?? []).length > 0
+      ? `AND machine_id IN (${controllers.map((m) => `'${m}'`).join(',')}) `
       : ``
   }
     GROUP BY bucket, machine_id
@@ -201,12 +221,12 @@ ORDER BY pd.bucket, pd.machine_id;
 export const serverTimeline = (
   start: string,
   end: string,
-  services?: string[],
+  machinesIds?: string[],
 ) =>
   `SELECT time, machine_id, status ` +
   `FROM server_status ` +
-  ((services ?? []).length > 0
-    ? `AND service IN (${services.map((s) => `'${s}'`).join(',')}) `
+  ((machinesIds ?? []).length > 0
+    ? `AND service IN (${machinesIds.map((s) => `'${s}'`).join(',')}) `
     : ``) +
   `GROUP BY time, machine_id, status ` +
   `ORDER BY time, machine_id `;

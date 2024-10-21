@@ -4,6 +4,7 @@ export type TFilterReq = {
   resolution: string;
   services?: string[];
   machineIds?: string[];
+  controllers: string[];
 };
 
 export type TMetricsReq = {

@@ -52,6 +52,7 @@ CREATE INDEX idx_mem_instance ON mem_usage (service, machine_id);
 CREATE TABLE server_status (
     time        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     machine_id TEXT NOT NULL,
+    service    TEXT NOT NULL,
     status     BOOLEAN NOT NULL
 )
 
