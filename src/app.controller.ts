@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { AppService } from './app.service';
+import { TFilterReq, TMetricsReq } from './utils/types/request.type';
 
 @Controller('monitor-server')
 export class AppController {
@@ -11,7 +12,7 @@ export class AppController {
   }
 
   @Post('collect-metrics')
-  async collectMetrics(@Body() body: any) {
+  async collectMetrics(@Body() body: TMetricsReq) {
     await this.appService.collectMetrics(body);
   }
 
@@ -26,8 +27,8 @@ export class AppController {
   }
 
   @Post('server-status')
-  async getServerStatus(@Body() body: any) {
-    console.log(body.machineIds);
+  async getServerStatus(@Body() body: { machineIds: string[] }) {
+    // console.log(body.machineIds);
     return await this.appService.getCurrentServerStatus(body?.machineIds);
   }
 
@@ -37,17 +38,17 @@ export class AppController {
   }
 
   @Post('request')
-  async getRequestData(@Body() filter: any) {
+  async getRequestData(@Body() filter: TFilterReq) {
     return await this.appService.getRequestData(filter);
   }
 
   @Post('cpu-usage')
-  async getCpuUsage(@Body() filter: any) {
+  async getCpuUsage(@Body() filter: TFilterReq) {
     return await this.appService.getCpuData(filter);
   }
 
   @Post('mem-usage')
-  async getMemUsage(@Body() filter: any) {
+  async getMemUsage(@Body() filter: TFilterReq) {
     console.log(filter);
     return await this.appService.getMemData(filter);
   }
@@ -63,17 +64,17 @@ export class AppController {
   }
 
   @Post('avg-response')
-  async getAvgResponse(@Body() filter: any) {
+  async getAvgResponse(@Body() filter: TFilterReq) {
     return await this.appService.getResponseAvgData(filter);
   }
 
   @Post('dist-response')
-  async getDistResponse(@Body() filter: any) {
+  async getDistResponse(@Body() filter: TFilterReq) {
     return await this.appService.getResponseDistData(filter);
   }
 
   @Post('server-timeline')
-  async getServerTimeline(@Body() filter: any) {
+  async getServerTimeline(@Body() filter: TFilterReq) {
     return await this.appService.serverTimeline(filter);
   }
 }

@@ -39,7 +39,7 @@ export const getRequestQuery = (
   `SELECT time_bucket('${timeBucket}', time) AS bucket, COUNT(*) AS total_requests, machine_id, service ` +
   `FROM request ` +
   `WHERE time BETWEEN '${start}' AND '${end}' ` +
-  (services
+  ((services ?? []).length > 0
     ? `AND service IN (${services.map((s) => `'${s}'`).join(',')}) `
     : ``) +
   (machineIds
@@ -85,7 +85,9 @@ export const getResponseDistQuery = (
   `percentile_cont(0.9) WITHIN GROUP (ORDER BY response_time) AS p90 ` +
   `FROM request ` +
   `WHERE time BETWEEN '${start}' AND '${end}' ` +
-  (services ? `AND service ='${services}' ` : '') +
+  ((services ?? []).length > 0
+    ? `AND service IN (${services.map((s) => `'${s}'`).join(',')}) `
+    : ``) +
   `GROUP BY bucket, machine_id ` +
   `ORDER BY bucket, machine_id;`;
 
@@ -98,7 +100,7 @@ export const getCpuQuery = (
   `SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS avg, machine_id ` +
   `FROM cpu_usage ` +
   `WHERE time BETWEEN '${start}' AND '${end}' ` +
-  (machineIds
+  (machineIds ?? [].length > 0
     ? ` AND machine_id IN  (${machineIds.map((m) => `'${m}'`).join(',')})`
     : ``) +
   `GROUP BY bucket, machine_id ` +
@@ -114,7 +116,7 @@ export const getMemQuery = (
   `SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS avg , machine_id ` +
   `FROM mem_usage ` +
   `WHERE time BETWEEN '${start}' AND '${end}' ` +
-  (machineIds
+  ((machineIds ?? []).length
     ? ` AND machine_id IN  (${machineIds.map((m) => `'${m}'`).join(',')})`
     : ``) +
   `GROUP BY bucket, machine_id ` +
@@ -151,7 +153,9 @@ WITH percentile_data AS (
         percentile_cont(0.9) WITHIN GROUP (ORDER BY response_time) AS p90
     FROM request
     WHERE time BETWEEN '${start}' AND '${end}' ${
-    services ? `service = ${services} ` : ''
+    (services ?? []).length > 0
+      ? `AND service IN (${services.map((s) => `'${s}'`).join(',')}) `
+      : ``
   }
     GROUP BY bucket, machine_id
     ORDER BY bucket, machine_id
@@ -194,11 +198,15 @@ GROUP BY pd.bucket, pd.machine_id,
 ORDER BY pd.bucket, pd.machine_id;
 `;
 
-export const serverTimeline = (start: string, end: string, service?: string) =>
+export const serverTimeline = (
+  start: string,
+  end: string,
+  services?: string[],
+) =>
   `SELECT time, machine_id, status ` +
   `FROM server_status ` +
-  `WHERE time BETWEEN '${start}' AND '${end}' ${
-    service ? `AND service = '${service}' ` : ''
-  } ` +
+  ((services ?? []).length > 0
+    ? `AND service IN (${services.map((s) => `'${s}'`).join(',')}) `
+    : ``) +
   `GROUP BY time, machine_id, status ` +
   `ORDER BY time, machine_id `;

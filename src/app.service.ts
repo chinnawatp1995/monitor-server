@@ -15,6 +15,7 @@ import {
   serverTimeline,
 } from './utils/rawSql';
 import { fillMissingBuckets, getTIMESTAMPTZ } from './utils/util-functions';
+import { TFilterReq, TMetricsReq } from './utils/types/request.type';
 
 export const TRACK_STATUS = new Map<string, boolean>();
 
@@ -37,7 +38,7 @@ export class AppService {
     this.serverStatus();
   }
 
-  async collectMetrics(metrics: any) {
+  async collectMetrics(metrics: TMetricsReq) {
     // console.log(metrics);
     const { request, cpu, mem } = metrics;
     try {
@@ -164,7 +165,7 @@ export class AppService {
     ).rows;
   }
 
-  async getRequestData(filterObj: any) {
+  async getRequestData(filterObj: TFilterReq) {
     const { startTime, endTime, resolution, services, machineIds } = filterObj;
     // console.log(
     //   getRequestQuery(startTime, endTime, resolution, services, machineIds),
@@ -188,7 +189,7 @@ export class AppService {
     );
   }
 
-  async getResponseAvgData(filterObj: any) {
+  async getResponseAvgData(filterObj: TFilterReq) {
     const { startTime, endTime, resolution, services, machineIds } = filterObj;
     console.log(
       getResponseAvgQuery(startTime, endTime, resolution, services, machineIds),
@@ -207,8 +208,8 @@ export class AppService {
     return fillMissingBuckets(records, 'bucket', 'avg_response', 'machine_id');
   }
 
-  async getResponseDistData(filterObj: any) {
-    const { startTime, endTime, resolution, service } = filterObj;
+  async getResponseDistData(filterObj: TFilterReq) {
+    const { startTime, endTime, resolution, services } = filterObj;
     // console.log(getResponseTimePercentile(startTime, endTime, resolution));
     const records = (
       await this.pgClient.query({
@@ -218,11 +219,7 @@ export class AppService {
     return (Object as any).groupBy(records, ({ machine_id }) => machine_id);
   }
 
-  async getServerStatusStatData(service?: string) {
-    debugger;
-  }
-
-  async getCpuData(filter: any) {
+  async getCpuData(filter: TFilterReq) {
     const { startTime, endTime, resolution, machineIds } = filter;
     // console.log(getCpuQuery(startTime, endTime, resolution, machineIds));
     const records = (
@@ -241,7 +238,7 @@ export class AppService {
     );
   }
 
-  async getMemData(filter: any) {
+  async getMemData(filter: TFilterReq) {
     // console.log(getTIMESTAMPTZ());
     const { startTime, endTime, resolution, machineIds } = filter;
     // console.log(getMemQuery(startTime, endTime, resolution, machineIds));
@@ -290,11 +287,11 @@ export class AppService {
   }
 
   async serverTimeline(filterObj: any) {
-    const { startTime, endTime, service } = filterObj;
+    const { startTime, endTime, services } = filterObj;
     // console.log(serverTimeline(startTime, endTime, service));
     const records = (
       await this.pgClient.query({
-        text: serverTimeline(startTime, endTime, service),
+        text: serverTimeline(startTime, endTime, services),
       })
     ).rows;
     return fillMissingBuckets(records, 'time', 'status', 'machine_id');
