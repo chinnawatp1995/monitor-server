@@ -2,10 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { Pool } from 'pg';
 import {
   createCpuQuery,
-  createErrorRateQuery,
   createMemQuery,
   createRequestQuery,
-  createResponseDurQuery,
   createServerStatus,
   getCpuQuery,
   getCurrentServerStatusQuery,
@@ -132,7 +130,7 @@ export class AppService {
   async getService() {
     return (
       await this.pgClient.query({
-        text: `SELECT DISTINCT ON (service) service FROM cpu_usage_2;`,
+        text: `SELECT DISTINCT ON (service) service FROM cpu_usage;`,
       })
     ).rows.map((r) => r.service);
   }
@@ -140,7 +138,7 @@ export class AppService {
   async getMachineByService(service: string) {
     return (
       await this.pgClient.query({
-        text: `SELECT DISTINCT ON (machine_id) machine_id FROM cpu_usage_2 WHERE service = '${service}';`,
+        text: `SELECT DISTINCT ON (machine_id) machine_id FROM cpu_usage WHERE service = '${service}';`,
       })
     ).rows.map((r) => r.machine_id);
   }

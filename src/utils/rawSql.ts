@@ -1,64 +1,3 @@
-import {
-  TResourceUsageRec,
-  TRequestRateRec,
-  TResponseDurRec,
-} from './types/record.type';
-
-export const createRequestRateQuery = (recs: TRequestRateRec[]): string =>
-  `INSERT INTO request_rate(created, job, machine_id, count, path) ` +
-  `VALUES ${recs
-    .map(
-      (rec) =>
-        `(${Object.values(rec)
-          .map((v) => (typeof v === 'string' ? `'${v}'` : v))
-          .join(',')})`,
-    )
-    .join(',')}`;
-
-export const createResponseDurQuery = (recs: TResponseDurRec[]): string =>
-  `INSERT INTO response_duration(created, job, machine_id, lower_bound, upper_bound, count, path) ` +
-  `VALUES ${recs
-    .map(
-      (rec) =>
-        `(${Object.values(rec)
-          .map((v) => (typeof v === 'string' ? `'${v}'` : v))
-          .join(',')})`,
-    )
-    .join(',')}`;
-
-export const createErrorRateQuery = (recs: TRequestRateRec[]): string =>
-  `INSERT INTO error_rate(created, job, machine_id, error_code, path) ` +
-  `VALUES ${recs
-    .map(
-      (rec) =>
-        `(${Object.values(rec)
-          .map((v) => (typeof v === 'string' ? `'${v}'` : v))
-          .join(',')})`,
-    )
-    .join(',')}`;
-
-export const createCpuUsage = (recs: TResourceUsageRec[]): string =>
-  `INSERT INTO cpu_usage(created, machine_id, value) ` +
-  `VALUES ${recs
-    .map(
-      (rec) =>
-        `(${Object.values(rec)
-          .map((v) => (typeof v === 'string' ? `'${v}'` : v))
-          .join(',')})`,
-    )
-    .join(',')}`;
-
-export const createMemUsage = (recs: TResourceUsageRec[]): string =>
-  `INSERT INTO mem_usage(created,  machine_id, value) ` +
-  `VALUES ${recs
-    .map(
-      (rec) =>
-        `(${Object.values(rec)
-          .map((v) => (typeof v === 'string' ? `'${v}'` : v))
-          .join(',')})`,
-    )
-    .join(',')}`;
-
 export const createRequestQuery = (recs: any): string =>
   `INSERT INTO request(time, service, machine_id, method, path, status_code, response_time, error_message) ` +
   `VALUES ${recs.values
@@ -69,7 +8,7 @@ export const createRequestQuery = (recs: any): string =>
     .join(',')}`;
 
 export const createCpuQuery = (recs: any): string =>
-  `INSERT INTO cpu_usage_2(time, service, machine_id, value) ` +
+  `INSERT INTO cpu_usage(time, service, machine_id, value) ` +
   `VALUES ${recs.values
     .map(
       (rec) =>
@@ -78,7 +17,7 @@ export const createCpuQuery = (recs: any): string =>
     .join(',')}`;
 
 export const createMemQuery = (recs: any): string =>
-  `INSERT INTO mem_usage_2(time, service, machine_id, value) ` +
+  `INSERT INTO mem_usage(time, service, machine_id, value) ` +
   `VALUES ${recs.values
     .map(
       (rec) =>
@@ -157,7 +96,7 @@ export const getCpuQuery = (
   machineIds?: string[],
 ) =>
   `SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS avg, machine_id ` +
-  `FROM cpu_usage_2 ` +
+  `FROM cpu_usage ` +
   `WHERE time BETWEEN '${start}' AND '${end}' ` +
   (machineIds
     ? ` AND machine_id IN  (${machineIds.map((m) => `'${m}'`).join(',')})`
@@ -173,7 +112,7 @@ export const getMemQuery = (
   machineIds?: string[],
 ) =>
   `SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS avg , machine_id ` +
-  `FROM mem_usage_2 ` +
+  `FROM mem_usage ` +
   `WHERE time BETWEEN '${start}' AND '${end}' ` +
   (machineIds
     ? ` AND machine_id IN  (${machineIds.map((m) => `'${m}'`).join(',')})`
