@@ -8,6 +8,7 @@ CREATE TABLE  request (
     id              SERIAL, 
     time            TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     service         TEXT NOT NULL,
+    controller      TEXT NOT NULL DEFAULT '',
     machine_id      TEXT NOT NULL,
     method          TEXT NOT NULL,
     path            TEXT NOT NULL,
@@ -22,7 +23,7 @@ CREATE INDEX idx_req_instance_time ON request (service, machine_id, time);
 CREATE INDEX idx_req_instance ON request (service, machine_id);
 CREATE INDEX idx_req_path ON request_rate (path);
 
-CREATE TABLE cpu_usage_2 (
+CREATE TABLE cpu_usage (
     id          SERIAL,
     time        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     service     TEXT NOT NULL,
@@ -35,7 +36,7 @@ SELECT create_hypertable('cpu_usage_2', 'time');
 CREATE INDEX idx_cpu_instance_time ON cpu_usage (service, machine_id, time);
 CREATE INDEX idx_cpu_instance ON cpu_usage (service, machine_id);
 
-CREATE TABLE mem_usage_2 (
+CREATE TABLE mem_usage (
     id          SERIAL,
     time        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     service     TEXT NOT NULL,
