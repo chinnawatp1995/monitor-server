@@ -1,0 +1,147 @@
+@contentType = application/json
+@baseUrl = http://localhost:3010/monitor-server
+
+###
+# @name ping
+GET {{baseUrl}}/ping
+Content-Type:  {{contentType}}
+
+
+###
+# @name collectMetrics
+POST {{baseUrl}}/collectMetrics
+Content-Type:  {{contentType}}
+
+{
+    "requestRate": {
+        "data": [
+            {
+                "created": 1,
+                "job": "job_A",
+                "machineId": "machine_01",
+                "count": 10,
+                "path": "path_a"
+            },
+            {
+                "created": 2,
+                "job": "job_A",
+                "machineId": "machine_01",
+                "count": 10,
+                "path": "path_a"
+            },
+            {
+                "created": 3,
+                "job": "job_A",
+                "machineId": "machine_01",
+                "count": 10,
+                "path": "path_a"
+            }
+        ]
+    }
+}
+
+###
+# @name list-service
+GET {{baseUrl}}/services
+
+
+###
+# @name list-machine
+GET {{baseUrl}}/machines?service=jobA
+
+
+###
+# @name get-path
+GET {{baseUrl}}/path?service=jobA
+
+
+###
+# @name server-status
+POST {{baseUrl}}/server-status
+Content-Type:  {{contentType}}
+
+{
+    "machineIds": ["machine_01", "machine_02"]
+}
+
+###
+# @name request-data
+POST {{baseUrl}}/request
+Content-Type: {{contentType}}
+
+{
+    "startTime": "2024-10-08 21:27:53.602+00",
+    "endTime": "2024-10-10 21:28:53.602+00" ,
+    "resolution": "1 hour"
+    # "services": ["jobA"],
+    # "machineIds": ["machine_02", "machine_01"]
+}
+
+### 
+# @name get-cpu-usage
+POST {{baseUrl}}/cpu-usage
+Content-Type: {{contentType}}
+
+{
+    "startTime": "2024-10-08T16:00:00.000Z",
+    "endTime": "2024-10-09T23:00:00.000Z" ,
+    "resolution": "1 hour"
+    # "machineIds": ["machine_02"]
+}
+
+### 
+# @name get-mem-usage
+POST {{baseUrl}}/mem-usage
+Content-Type: {{contentType}}
+
+{
+    "startTime": "2024-10-08 21:27:53.602+00",
+    "endTime": "2024-10-09 21:28:53.602+00" ,
+    "resolution": "1 hour"
+    # "machineIds": ["machine_02"]
+}
+
+###
+# @name error-req
+GET {{baseUrl}}/error-req?service=jobB
+
+### 
+# @name error-ranking
+GET {{baseUrl}}/ve?service=jobA
+
+###
+# @name response-avg
+POST {{baseUrl}}/avg-response
+Content-Type: {{contentType}}
+
+{
+    "startTime": "2024-10-08 21:27:53.602+00",
+    "endTime": "2024-10-10 21:28:53.602+00" ,
+    "resolution": "1 hour"
+    # "services": ["jobA"],
+    # "machineIds": ["machine_02", "machine_01"]
+}
+
+###
+# @name response-dist
+POST {{baseUrl}}/dist-response
+Content-Type: {{contentType}}
+
+{
+    "startTime": "2024-10-07 21:27:53.602+00",
+    "endTime": "2024-10-10 21:28:53.602+00" ,
+    "resolution": "1 second"
+    # "services": ["jobA"],
+    # "machineIds": ["machine_02", "machine_01"]
+}
+
+###
+# @name server-timeline
+POST {{baseUrl}}/server-timeline
+Content-Type: {{contentType}}
+
+{
+    "startTime": "2024-10-07 21:27:53.602+00",
+    "endTime": "2024-10-10 21:28:53.602+00" ,
+    "services": "jobA"
+}
