@@ -227,7 +227,7 @@ export const serverTimeline = (
 ) =>
   `SELECT time, machine_id, status ` +
   `FROM server_status ` +
-  `WHERE time IN BETWEEN '${start}' AND '${end}' ` +
+  `WHERE time BETWEEN '${start}' AND '${end}' ` +
   ((machinesIds ?? []).length > 0
     ? `AND service IN (${machinesIds.map((s) => `'${s}'`).join(',')}) `
     : ``) +
