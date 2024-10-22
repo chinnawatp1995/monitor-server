@@ -36,6 +36,7 @@ export class AppService {
     });
     this.pgClient = await pgPool.connect();
     this.serverStatus();
+    await this.initStatus();
   }
 
   async collectMetrics(metrics: TMetricsReq) {
@@ -98,6 +99,19 @@ export class AppService {
     } catch (e) {
       console.log(e);
     }
+  }
+
+  async initStatus() {
+    const result = (
+      await this.pgClient.query({
+        text: `SELECT DISTINCT ON (machine_id, service) machine_id, service FROM server_status;`,
+      })
+    ).rows;
+    console.log(result);
+    result.map((r) => {
+      TRACK_STATUS.set(`${r.service}:${r.machine_id}`, []);
+    });
+    console.log(TRACK_STATUS);
   }
 
   private updateStatus(service: string, machineId: string) {

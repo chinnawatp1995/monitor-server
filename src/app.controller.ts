@@ -28,7 +28,6 @@ export class AppController {
 
   @Post('server-status')
   async getServerStatus(@Body() body: { machineIds: string[] }) {
-    // console.log(body.machineIds);
     return await this.appService.getCurrentServerStatus(body?.machineIds);
   }
 
