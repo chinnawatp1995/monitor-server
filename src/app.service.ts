@@ -17,7 +17,7 @@ import {
 import { fillMissingBuckets, getTIMESTAMPTZ } from './utils/util-functions';
 import { TFilterReq, TMetricsReq } from './utils/types/request.type';
 
-export const TRACK_STATUS = new Map<string, boolean>();
+export const TRACK_STATUS = new Map<string, boolean[]>();
 
 @Injectable()
 export class AppService {
@@ -101,19 +101,26 @@ export class AppService {
   }
 
   private updateStatus(service: string, machineId: string) {
-    TRACK_STATUS.set(`${service}:${machineId}`, true);
+    const mapValue = TRACK_STATUS.get(`${service}:${machineId}`) ?? [];
+    mapValue.push(true);
+    TRACK_STATUS.set(`${service}:${machineId}`, mapValue.slice(-3));
+  }
+
+  private maxPooling(arr: boolean[]): boolean {
+    const result = Math.max(...arr.map((b) => Number(b)));
+    return Boolean(result);
   }
 
   async serverStatus() {
     setInterval(async () => {
-      console.log(...TRACK_STATUS.entries());
+      // console.log(...TRACK_STATUS.entries());
       const recs =
         [...TRACK_STATUS.entries()].map(([k, v]) => {
           const [service, machineId] = k.split(':');
           return {
             machineId,
             service,
-            status: v,
+            status: this.maxPooling(v),
           };
         }) ?? [];
       // console.log(recs);
@@ -125,7 +132,9 @@ export class AppService {
       }
 
       TRACK_STATUS.forEach((value, key, map) => {
-        map.set(key, false);
+        const v = map.get(key) ?? [];
+        v.push(false);
+        map.set(key, v.slice(-3));
       });
     }, 1_000 * 10);
   }
