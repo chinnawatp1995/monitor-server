@@ -31,7 +31,7 @@ CREATE TABLE cpu_usage (
     value       DOUBLE PRECISION NOT NULL
 )
 
-SELECT create_hypertable('cpu_usage_2', 'time');
+SELECT create_hypertable('cpu_usage', 'time');
 
 CREATE INDEX idx_cpu_instance_time ON cpu_usage (service, machine_id, time);
 CREATE INDEX idx_cpu_instance ON cpu_usage (service, machine_id);
@@ -44,7 +44,7 @@ CREATE TABLE mem_usage (
     value       DOUBLE PRECISION NOT NULL
 )
 
-SELECT create_hypertable('mem_usage_2', 'time');
+SELECT create_hypertable('mem_usage', 'time');
 
 CREATE INDEX idx_mem_instance_time ON mem_usage (service, machine_id, time);
 CREATE INDEX idx_mem_instance ON mem_usage (service, machine_id);
