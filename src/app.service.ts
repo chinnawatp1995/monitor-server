@@ -252,15 +252,7 @@ export class AppService {
         text: getCpuQuery(startTime, endTime, resolution, machineIds),
       })
     ).rows;
-    return fillMissingBuckets(
-      records.map((r) => {
-        r.avg *= 100;
-        return r;
-      }),
-      'bucket',
-      'avg',
-      'machine_id',
-    );
+    return fillMissingBuckets(records, 'bucket', 'avg', 'machine_id');
   }
 
   async getMemData(filter: TFilterReq) {
@@ -272,15 +264,7 @@ export class AppService {
         text: getMemQuery(startTime, endTime, resolution, machineIds),
       })
     ).rows;
-    return fillMissingBuckets(
-      records.map((r) => {
-        r.avg *= 1000;
-        return r;
-      }),
-      'bucket',
-      'avg',
-      'machine_id',
-    );
+    return fillMissingBuckets(records, 'bucket', 'avg', 'machine_id');
   }
 
   async getErrorToReqRatio(service: string) {
