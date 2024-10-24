@@ -54,7 +54,7 @@ CREATE TABLE network_usage (
     time        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     service     TEXT NOT NULL,
     machine_id  TEXT NOT NULL,
-    interface   TEXT NOT NULL DEFAULT '',
+    interface   TEXT,
     rx_sec      BIGINT NOT NULL,
     tx_sec      BIGINT NOT NULL
 )
