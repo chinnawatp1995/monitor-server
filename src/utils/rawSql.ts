@@ -25,6 +25,15 @@ export const createMemQuery = (recs: any): string =>
     )
     .join(',')}`;
 
+export const createNetworkQuery = (recs: any): string =>
+  `INSERT INTO network_usage(time, service, machine_id, rx_sec, tx_sec) ` +
+  `VALUES ${recs.values
+    .map(
+      (rec) =>
+        `('${rec.time}','${recs.tags[0]}','${recs.tags[1]}', ${rec.rx_sec}, ${rec.tx_sec})`,
+    )
+    .join(',')}`;
+
 export const createServerStatus = (recs: any): string =>
   `INSERT INTO server_status(machine_id, status, service) ` +
   `VALUES ${recs
@@ -138,6 +147,38 @@ export const getMemQuery = (
   `GROUP BY bucket, machine_id ` +
   `ORDER BY bucket, machine_id;
 `;
+
+export const getReceivedNetworkQuery = (
+  start: string,
+  end: string,
+  timeBucket: string,
+  machineIds: string[],
+) =>
+  `SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(rx_sec) AS avg , machine_id ` +
+  `FROM network_usage ` +
+  `WHERE time BETWEEN '${start}' AND '${end}' ` +
+  ((machineIds ?? []).length
+    ? ` AND machine_id IN  (${machineIds.map((m) => `'${m}'`).join(',')})`
+    : ``) +
+  `GROUP BY bucket, machine_id ` +
+  `ORDER BY bucket, machine_id;
+  `;
+
+export const getTransferedNetworkQuery = (
+  start: string,
+  end: string,
+  timeBucket: string,
+  machineIds: string[],
+) =>
+  `SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(tx_sec) AS avg , machine_id ` +
+  `FROM network_usage ` +
+  `WHERE time BETWEEN '${start}' AND '${end}' ` +
+  ((machineIds ?? []).length
+    ? ` AND machine_id IN  (${machineIds.map((m) => `'${m}'`).join(',')})`
+    : ``) +
+  `GROUP BY bucket, machine_id ` +
+  `ORDER BY bucket, machine_id;
+    `;
 
 export const getCurrentServerStatusQuery = (machineIds?: string[]) =>
   `SELECT DISTINCT ON (machine_id) machine_id, status, time ` +

@@ -3,15 +3,18 @@ import { Pool } from 'pg';
 import {
   createCpuQuery,
   createMemQuery,
+  createNetworkQuery,
   createRequestQuery,
   createServerStatus,
   getCpuQuery,
   getCurrentServerStatusQuery,
   getMemQuery,
+  getReceivedNetworkQuery,
   getRequestQuery,
   getResponseAvgQuery,
   getResponseDistQuery,
   getResponseTimePercentile,
+  getTransferedNetworkQuery,
   serverTimeline,
 } from './utils/rawSql';
 import { fillMissingBuckets } from './utils/util-functions';
@@ -40,7 +43,7 @@ export class AppService {
   }
 
   async collectMetrics(metrics: TMetricsReq) {
-    const { request, cpu, mem, resourceCollectionTimes } = metrics;
+    const { request, cpu, mem, network, resourceCollectionTimes } = metrics;
     try {
       this.updateStatus(metrics.tags[0], metrics.tags[1]);
 
@@ -92,6 +95,22 @@ export class AppService {
           }),
         };
         await this.pgClient.query({ text: createMemQuery(memValue) });
+      }
+
+      if (Object.values(network ?? {}).length > 0) {
+        const networkValue = {
+          tags: metrics.tags,
+          values: Object.values(network).flatMap((v, index) => {
+            return {
+              time: new Date(resourceCollectionTimes[index]).toISOString(),
+              rx_sec: v[0],
+              tx_sec: v[1],
+            };
+          }),
+        };
+        await this.pgClient({
+          text: createNetworkQuery(networkValue),
+        });
       }
     } catch (e) {
       console.log(e);
@@ -266,6 +285,36 @@ export class AppService {
     const records = (
       await this.pgClient.query({
         text: getMemQuery(startTime, endTime, resolution, machineIds),
+      })
+    ).rows;
+    return fillMissingBuckets(records, 'bucket', 'avg', 'machine_id');
+  }
+
+  async getReceivedNetworkData(filter: TFilterReq) {
+    const { startTime, endTime, resolution, machineIds } = filter;
+    const records = (
+      await this.pgClient.query({
+        text: getReceivedNetworkQuery(
+          startTime,
+          endTime,
+          resolution,
+          machineIds,
+        ),
+      })
+    ).rows;
+    return fillMissingBuckets(records, 'bucket', 'avg', 'machine_id');
+  }
+
+  async getTransferedNetworkData(filter: TFilterReq) {
+    const { startTime, endTime, resolution, machineIds } = filter;
+    const records = (
+      await this.pgClient.query({
+        text: getTransferedNetworkQuery(
+          startTime,
+          endTime,
+          resolution,
+          machineIds,
+        ),
       })
     ).rows;
     return fillMissingBuckets(records, 'bucket', 'avg', 'machine_id');

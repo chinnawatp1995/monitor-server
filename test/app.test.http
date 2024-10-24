@@ -101,6 +101,31 @@ Content-Type: {{contentType}}
     # "machineIds": ["machine_02"]
 }
 
+### 
+# @name get-rx-network-usage
+POST {{baseUrl}}/rx-network-usage
+Content-Type: {{contentType}}
+
+{
+    "startTime": "2024-10-08 21:27:53.602+00",
+    "endTime": "2024-10-09 21:28:53.602+00" ,
+    "resolution": "1 hour"
+    # "machineIds": ["machine_02"]
+}
+
+
+### 
+# @name get-tx-network-usage
+POST {{baseUrl}}/tx-network-usage
+Content-Type: {{contentType}}
+
+{
+    "startTime": "2024-10-08 21:27:53.602+00",
+    "endTime": "2024-10-09 21:28:53.602+00" ,
+    "resolution": "1 hour"
+    # "machineIds": ["machine_02"]
+}
+
 ###
 # @name error-req
 GET {{baseUrl}}/error-req?service=jobB
@@ -129,10 +154,10 @@ Content-Type: {{contentType}}
 
 {
     "startTime": "2024-10-07 21:27:53.602+00",
-    "endTime": "2024-10-10 21:28:53.602+00" ,
+    "endTime": "2024-10-30 21:28:53.602+00" ,
     "resolution": "1 second"
-    # "services": ["jobA"],
-    # "machineIds": ["machine_02", "machine_01"]
+    # "services": ["liberator-api"],
+    # "controllers": ["AppController"]
 }
 
 ###
@@ -142,6 +167,7 @@ Content-Type: {{contentType}}
 
 {
     "startTime": "2024-10-07 21:27:53.602+00",
-    "endTime": "2024-10-10 21:28:53.602+00" ,
-    "services": "jobA"
+    "endTime": "2024-10-30 21:28:53.602+00" ,
+    "services": "jobA",
+    "machineIds": ["machine_01", "machine_02"]
 }

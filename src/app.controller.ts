@@ -52,6 +52,17 @@ export class AppController {
     return await this.appService.getMemData(filter);
   }
 
+  @Post('rx-network-usage')
+  async getReceivedNetwork(@Body() filter: TFilterReq) {
+    return await this.appService.getReceivedNetworkData(filter);
+  }
+
+  @Post('tx-network-usage')
+  async getTransferedNetwork(@Body() filter: TFilterReq) {
+    console.log(filter);
+    return await this.appService.getTransferedNetworkData(filter);
+  }
+
   @Get('error-req')
   async getErrorReqRatio(@Query('service') service: string) {
     return await this.appService.getErrorToReqRatio(service);

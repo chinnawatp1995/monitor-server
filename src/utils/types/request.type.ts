@@ -13,5 +13,6 @@ export type TMetricsReq = {
   request: Record<string, any>;
   cpu: Record<string, any>;
   mem: Record<string, any>;
+  network?: Record<string, any>;
   resourceCollectionTimes: number[];
 };
