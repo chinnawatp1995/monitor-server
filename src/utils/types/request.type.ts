@@ -5,6 +5,7 @@ export type TFilterReq = {
   services?: string[];
   machineIds?: string[];
   controllers: string[];
+  resourceCollectionTimes?: number[];
 };
 
 export type TMetricsReq = {
@@ -12,4 +13,5 @@ export type TMetricsReq = {
   request: Record<string, any>;
   cpu: Record<string, any>;
   mem: Record<string, any>;
+  resourceCollectionTimes: number[];
 };

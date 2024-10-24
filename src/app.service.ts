@@ -14,7 +14,7 @@ import {
   getResponseTimePercentile,
   serverTimeline,
 } from './utils/rawSql';
-import { fillMissingBuckets, getTIMESTAMPTZ } from './utils/util-functions';
+import { fillMissingBuckets } from './utils/util-functions';
 import { TFilterReq, TMetricsReq } from './utils/types/request.type';
 
 export const TRACK_STATUS = new Map<string, boolean[]>();
@@ -40,8 +40,7 @@ export class AppService {
   }
 
   async collectMetrics(metrics: TMetricsReq) {
-    // console.log(metrics);
-    const { request, cpu, mem } = metrics;
+    const { request, cpu, mem, resourceCollectionTimes } = metrics;
     try {
       this.updateStatus(metrics.tags[0], metrics.tags[1]);
 
@@ -51,7 +50,7 @@ export class AppService {
           values: Object.entries(request ?? {}).flatMap(([k, v]) => {
             return (v as any).map((r) => {
               return {
-                time: getTIMESTAMPTZ(),
+                time: new Date(r[0]).toISOString(),
                 statusCode: r[1],
                 responseTime: r[2],
                 errorMessage: r[3],
@@ -61,18 +60,16 @@ export class AppService {
             });
           }),
         };
-        // console.log(requestValue);
-        // console.log(createRequestQuery(requestValue));
 
         await this.pgClient.query({ text: createRequestQuery(requestValue) });
       }
       if (Object.values(cpu ?? {}).length > 0) {
         const cpuValue = {
           tags: metrics.tags,
-          values: Object.values(cpu).flatMap((v) => {
+          values: Object.values(cpu).flatMap((v, index) => {
             return (v as any).map((r) => {
               return {
-                time: getTIMESTAMPTZ(),
+                time: new Date(resourceCollectionTimes[index]).toISOString(),
                 usage: r,
               };
             });
@@ -85,10 +82,10 @@ export class AppService {
       if (Object.values(mem ?? {}).length > 0) {
         const memValue = {
           tags: metrics.tags,
-          values: Object.values(mem).flatMap((v) => {
+          values: Object.values(mem).flatMap((v, index) => {
             return (v as any).map((r) => {
               return {
-                time: getTIMESTAMPTZ(),
+                time: new Date(resourceCollectionTimes[index]).toISOString(),
                 usage: r,
               };
             });
@@ -304,7 +301,6 @@ export class AppService {
 
   async serverTimeline(filterObj: any) {
     const { startTime, endTime, services, machineIds } = filterObj;
-    console.log(serverTimeline(startTime, endTime, machineIds));
     const records = (
       await this.pgClient.query({
         text: serverTimeline(startTime, endTime, machineIds),
