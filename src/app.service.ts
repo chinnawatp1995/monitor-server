@@ -107,11 +107,11 @@ export class AppService {
         text: `SELECT DISTINCT ON (machine_id, service) machine_id, service FROM server_status;`,
       })
     ).rows;
-    console.log(result);
+    // console.log(result);
     result.map((r) => {
       TRACK_STATUS.set(`${r.service}:${r.machine_id}`, []);
     });
-    console.log(TRACK_STATUS);
+    // console.log(TRACK_STATUS);
   }
 
   private updateStatus(service: string, machineId: string) {
@@ -230,17 +230,24 @@ export class AppService {
         ),
       })
     ).rows;
-    return fillMissingBuckets(records, 'bucket', 'avg_response', 'machine_id');
+    return fillMissingBuckets(records, 'bucket', 'avg', 'machine_id');
   }
 
   async getResponseDistData(filterObj: TFilterReq) {
-    const { startTime, endTime, resolution, services } = filterObj;
+    const { startTime, endTime, resolution, services, controllers } = filterObj;
     // console.log(getResponseTimePercentile(startTime, endTime, resolution));
     const records = (
       await this.pgClient.query({
-        text: getResponseTimePercentile(startTime, endTime, resolution),
+        text: getResponseTimePercentile(
+          startTime,
+          endTime,
+          resolution,
+          services,
+          controllers,
+        ),
       })
     ).rows;
+    console.log(records);
     return (Object as any).groupBy(records, ({ machine_id }) => machine_id);
   }
 
@@ -296,11 +303,11 @@ export class AppService {
   }
 
   async serverTimeline(filterObj: any) {
-    const { startTime, endTime, services } = filterObj;
-    // console.log(serverTimeline(startTime, endTime, service));
+    const { startTime, endTime, services, machineIds } = filterObj;
+    console.log(serverTimeline(startTime, endTime, machineIds));
     const records = (
       await this.pgClient.query({
-        text: serverTimeline(startTime, endTime, services),
+        text: serverTimeline(startTime, endTime, machineIds),
       })
     ).rows;
     return fillMissingBuckets(records, 'time', 'status', 'machine_id');

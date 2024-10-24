@@ -166,3 +166,30 @@ export const cpuData = [
   a.avg *= 100;
   return a;
 });
+
+export const avgResposneData = [
+  {
+    bucket: '2024-10-21T01:00:00.000Z',
+    avg: 54.64705882352941,
+    machine_id: 'machine_01',
+    service: 'liberator-api',
+  },
+  {
+    bucket: '2024-10-23T01:00:00.000Z',
+    avg: 57.2625,
+    machine_id: 'machine_01',
+    service: 'liberator-api',
+  },
+  {
+    bucket: '2024-10-23T20:00:00.000Z',
+    avg: 107.65,
+    machine_id: 'machine_05',
+    service: 'liberator-api',
+  },
+  {
+    bucket: '2024-10-23T20:00:00.000Z',
+    avg: 103.80534351145039,
+    machine_id: 'machine_01',
+    service: 'liberator-api',
+  },
+];

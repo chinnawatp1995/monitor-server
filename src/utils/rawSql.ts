@@ -64,7 +64,7 @@ export const getResponseAvgQuery = (
   machineIds?: string[],
   controllers?: string[],
 ) =>
-  `SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(response_time) AS avg_response, machine_id, service ` +
+  `SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(response_time) AS avg, machine_id, service ` +
   `FROM request ` +
   `WHERE time BETWEEN '${start}' AND '${end}' ` +
   ((services ?? []).length > 0
@@ -229,7 +229,7 @@ export const serverTimeline = (
   `FROM server_status ` +
   `WHERE time BETWEEN '${start}' AND '${end}' ` +
   ((machinesIds ?? []).length > 0
-    ? `AND service IN (${machinesIds.map((s) => `'${s}'`).join(',')}) `
+    ? `AND machine_id IN (${machinesIds.map((s) => `'${s}'`).join(',')}) `
     : ``) +
   `GROUP BY time, machine_id, status ` +
   `ORDER BY time, machine_id `;

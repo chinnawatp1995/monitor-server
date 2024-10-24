@@ -49,6 +49,21 @@ SELECT create_hypertable('mem_usage', 'time');
 CREATE INDEX idx_mem_instance_time ON mem_usage (service, machine_id, time);
 CREATE INDEX idx_mem_instance ON mem_usage (service, machine_id);
 
+CREATE TABLE network_usage (
+    id          SERIAL,
+    time        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    service     TEXT NOT NULL,
+    machine_id  TEXT NOT NULL,
+    interface   TEXT NOT NULL DEFAULT '',
+    rx_sec      BIGINT NOT NULL,
+    tx_sec      BIGINT NOT NULL
+)
+
+SELECT create_hypertable('network_usage', 'time');
+
+CREATE INDEX idx_network_instance_time ON network_usage (service, machine_id, time);
+CREATE INDEX idx_network_instance ON network_usage (service, machine_id);
+
 CREATE TABLE server_status (
     time        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     machine_id TEXT NOT NULL,
