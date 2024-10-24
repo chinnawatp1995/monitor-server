@@ -46,7 +46,6 @@ export class AppService {
     const { request, cpu, mem, network, resourceCollectionTimes } = metrics;
     try {
       this.updateStatus(metrics.tags[0], metrics.tags[1]);
-
       if (Object.keys(request).length > 0) {
         const requestValue = {
           tags: metrics.tags,
@@ -69,8 +68,8 @@ export class AppService {
       if (Object.values(cpu ?? {}).length > 0) {
         const cpuValue = {
           tags: metrics.tags,
-          values: Object.values(cpu).flatMap((v, index) => {
-            return (v as any).map((r) => {
+          values: Object.values(cpu).flatMap((v) => {
+            return (v as any).map((r, index) => {
               return {
                 time: new Date(resourceCollectionTimes[index]).toISOString(),
                 usage: r,
@@ -85,8 +84,8 @@ export class AppService {
       if (Object.values(mem ?? {}).length > 0) {
         const memValue = {
           tags: metrics.tags,
-          values: Object.values(mem).flatMap((v, index) => {
-            return (v as any).map((r) => {
+          values: Object.values(mem).flatMap((v) => {
+            return (v as any).map((r, index) => {
               return {
                 time: new Date(resourceCollectionTimes[index]).toISOString(),
                 usage: r,
@@ -100,9 +99,9 @@ export class AppService {
       if (Object.values(network ?? {}).length > 0) {
         const networkValue = {
           tags: metrics.tags,
-          values: Object.values(network).flatMap((v, index) => {
-            return (v as any).map((r) => {
-              console.log(r);
+          values: Object.values(network).flatMap((v) => {
+            return (v as any).map((r, index) => {
+              // console.log(r);
               return {
                 time: new Date(resourceCollectionTimes[index]).toISOString(),
                 rx_sec: r[0],
@@ -268,7 +267,7 @@ export class AppService {
         ),
       })
     ).rows;
-    console.log(records);
+    // console.log(records);
     return (Object as any).groupBy(records, ({ machine_id }) => machine_id);
   }
 
