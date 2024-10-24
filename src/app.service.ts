@@ -101,14 +101,19 @@ export class AppService {
         const networkValue = {
           tags: metrics.tags,
           values: Object.values(network).flatMap((v, index) => {
-            return {
-              time: new Date(resourceCollectionTimes[index]).toISOString(),
-              rx_sec: v[0],
-              tx_sec: v[1],
-            };
+            return (v as any).map((r) => {
+              console.log(r);
+              return {
+                time: new Date(resourceCollectionTimes[index]).toISOString(),
+                rx_sec: r[0],
+                tx_sec: r[1],
+              };
+            });
           }),
         };
-        await this.pgClient({
+        // console.log(createNetworkQuery(networkValue));
+        // console.log(networkValue);
+        await this.pgClient.query({
           text: createNetworkQuery(networkValue),
         });
       }
