@@ -274,3 +274,17 @@ export const serverTimeline = (
     : ``) +
   `GROUP BY time, machine_id, status ` +
   `ORDER BY time, machine_id `;
+
+export const createAlertQuery = (alert: any) =>
+  `INSERT INTO alert_rule(name, service, machine_id, metric_type, aggregation, condition, threshold, duration, severity) ` +
+  `VALUES ('${alert.name}', '${alert.service}', '${alert.machineaId}', '${alert.metricType}', '${alert.aggregation}', '${alert.condition}', ${alert.threshold}, ${alert.duration}, '${alert.severity}')`;
+
+export const createRecipientQuery = (recipient: any) =>
+  `INSERT INTO recipient(app, token, url, room) ` +
+  `VALUES ('${recipient.app}', '${recipient.token}', '${recipient.url}', '${recipient.room}')`;
+
+export const getAlertRecipientsQuery = (ruleId: string) =>
+  `SELECT * FROM alert_recipient WHERE rule_id = ${ruleId}`;
+
+export const addRecipientToAlertQuery = (ruleId: string, recipientId: string) =>
+  `INSERT INTO alert_recipient(rule_id, recipient_id) VALUES (${ruleId}, ${recipientId})`;

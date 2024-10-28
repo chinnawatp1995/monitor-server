@@ -59,7 +59,6 @@ export class AppController {
 
   @Post('tx-network-usage')
   async getTransferedNetwork(@Body() filter: TFilterReq) {
-    console.log(filter);
     return await this.appService.getTransferedNetworkData(filter);
   }
 
@@ -86,5 +85,15 @@ export class AppController {
   @Post('server-timeline')
   async getServerTimeline(@Body() filter: TFilterReq) {
     return await this.appService.serverTimeline(filter);
+  }
+
+  @Post('create-alert')
+  async createAlert(@Body() alert: any) {
+    return await this.appService.createAlert(alert);
+  }
+
+  @Post('create-recipient')
+  async createRecipient(@Body() recipient: any) {
+    return await this.appService.createRecipient(recipient);
   }
 }

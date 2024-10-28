@@ -26,7 +26,7 @@ export function fillMissingBuckets(
   const parsedData = data.map((item) => ({
     ...item,
     [bucketField]: moment(item[bucketField]).toISOString(),
-    [valueField]: parseInt(item[valueField], 10),
+    [valueField]: Number(item[valueField]),
   }));
 
   const minTime = moment.min(parsedData.map((d) => moment(d[bucketField])));

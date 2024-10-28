@@ -96,7 +96,7 @@ Content-Type: {{contentType}}
 
 {
     "startTime": "2024-10-08 21:27:53.602+00",
-    "endTime": "2024-10-09 21:28:53.602+00" ,
+    "endTime": "2024-10-29 21:28:53.602+00" ,
     "resolution": "1 hour"
     # "machineIds": ["machine_02"]
 }
@@ -170,4 +170,43 @@ Content-Type: {{contentType}}
     "endTime": "2024-10-30 21:28:53.602+00" ,
     "services": "jobA",
     "machineIds": ["machine_01", "machine_02"]
+}
+
+###
+# @name create-alert
+POST {{baseUrl}}/create-alert
+Content-Type: {{contentType}}
+
+{
+    "name": "alert_01",
+    "service": "jobA",
+    "machineId": "machine_01",
+    "metricType": "cpu",
+    "aggregation": "avg",
+    "condition": ">",
+    "threshold": 10,
+    "duration": 10,
+    "severity": "danger"
+}
+
+###
+# @name create-recipient
+POST {{baseUrl}}/create-recipient
+Content-Type: {{contentType}}
+
+{
+    "app": "app_01",
+    "token": "token_01",
+    "url": "url_01",
+    "room": "room_01"
+}
+
+
+###
+# @name add-recipient-to-alert
+POST {{baseUrl}}/add-recipient-to-alert
+Content-Type: {{contentType}}
+
+{
+    
 }

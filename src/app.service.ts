@@ -1,9 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Pool } from 'pg';
 import {
+  addRecipientToAlertQuery,
+  createAlertQuery,
   createCpuQuery,
   createMemQuery,
   createNetworkQuery,
+  createRecipientQuery,
   createRequestQuery,
   createServerStatus,
   getCpuQuery,
@@ -21,6 +24,7 @@ import { fillMissingBuckets } from './utils/util-functions';
 import { TFilterReq, TMetricsReq } from './utils/types/request.type';
 
 export const TRACK_STATUS = new Map<string, boolean[]>();
+export let pgClient: any;
 
 @Injectable()
 export class AppService {
@@ -38,6 +42,7 @@ export class AppService {
       connectionTimeoutMillis: 2000,
     });
     this.pgClient = await pgPool.connect();
+    pgClient = this.pgClient;
     this.serverStatus();
     await this.initStatus();
   }
@@ -361,5 +366,31 @@ export class AppService {
     ).rows;
     return fillMissingBuckets(records, 'time', 'status', 'machine_id');
     // return records;
+  }
+
+  async createAlert(alert: any) {
+    try {
+      await this.pgClient.query({
+        text: createAlertQuery(alert),
+      });
+    } catch (e) {
+      console.log(e);
+    }
+    return {
+      success: true,
+    };
+  }
+
+  async createRecipient(recipient: any) {
+    await this.pgClient.query({
+      text: createRecipientQuery(recipient),
+    });
+    return {};
+  }
+
+  async addRecipientToAlert(ruleId: string, recipientId: string) {
+    await this.pgClient.query({
+      text: addRecipientToAlertQuery(ruleId, recipientId),
+    });
   }
 }
