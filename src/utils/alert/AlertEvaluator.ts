@@ -9,11 +9,18 @@ const AGGREGATION_MAP = {
 };
 
 export class AlertEvaluator {
-  async evaluateRule(rule: AlertRule): Promise<boolean> {
+  async evaluateRule(rule: AlertRule) {
     const value = await this.getMetrics(rule);
     // const threshold = await this.getMetrics(rule);
     // TODO : handle threshold when it is not single value (in case of threshold is expression)
-    return this.compareValue(value[0].value, rule.condition, rule.threshold);
+    return {
+      isTriggered: this.compareValue(
+        value[0].value,
+        rule.condition,
+        rule.threshold,
+      ),
+      metric_value: value,
+    };
   }
 
   private compareValue(

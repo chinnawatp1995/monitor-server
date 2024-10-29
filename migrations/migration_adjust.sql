@@ -13,8 +13,11 @@ CREATE TABLE  request (
     method          TEXT NOT NULL,
     path            TEXT NOT NULL,
     status_code     INTEGER NOT NULL,
-    response_time   FLOAT NOT NULL,
-    error_message   TEXT
+    response_time   DOUBLE PRECISION NOT NULL,
+    error_message   TEXT,
+    -- client_ip       TEXT,
+    -- user_agent      TEXT,
+    -- trace_id        TEXT
 )
 
 SELECT create_hypertable('request', 'time')

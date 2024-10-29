@@ -14,6 +14,7 @@ interface AlertRule {
   duration: string; // e.g., '5 minutes', '1 hour'
   severity: 'critical' | 'warning' | 'info';
   enabled?: boolean; // Optional since it has a default value
+  silence_time: string;
 }
 
 interface MetricData {

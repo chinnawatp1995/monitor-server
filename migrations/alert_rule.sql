@@ -22,8 +22,6 @@ CREATE INDEX idx_alert_rule_machine ON alert_rule(machine_id);
 CREATE TABLE alert_history (
     time            TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     rule_id         INTEGER REFERENCES alert_rule(id),
-    service         TEXT NOT NULL,
-    machine_id      TEXT,
     metric_value    DOUBLE PRECISION NOT NULL
 );
 
