@@ -22,6 +22,7 @@ import {
 } from './utils/rawSql';
 import { fillMissingBuckets } from './utils/util-functions';
 import { TFilterReq, TMetricsReq } from './utils/types/request.type';
+import { AlertManager } from './utils/alert/AlertManager';
 
 export const TRACK_STATUS = new Map<string, boolean[]>();
 export let pgClient: any;
@@ -45,6 +46,12 @@ export class AppService {
     pgClient = this.pgClient;
     this.serverStatus();
     await this.initStatus();
+
+    const alertManager = new AlertManager();
+
+    setInterval(() => {
+      alertManager.checkRules();
+    }, 5000);
   }
 
   async collectMetrics(metrics: TMetricsReq) {

@@ -132,7 +132,7 @@ GET {{baseUrl}}/error-req?service=jobB
 
 ### 
 # @name error-ranking
-GET {{baseUrl}}/ve?service=jobA
+GET {{baseUrl}}/error-ranking?service=liberator-api
 
 ###
 # @name response-avg

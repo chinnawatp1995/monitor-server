@@ -10,6 +10,7 @@ CREATE TABLE alert_rule (
     duration        INTEGER NOT NULL,  -- How long condition must be true before alerting
     severity        TEXT NOT NULL,  -- 'critical', 'warning', 'info'
     enabled         BOOLEAN NOT NULL DEFAULT true,
+    message         TEXT,
     created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );

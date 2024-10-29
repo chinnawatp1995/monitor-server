@@ -1,46 +1,20 @@
+import { pgClient } from 'src/app.service';
+
+const AGGREGATION_MAP = {
+  avg: 'AVG',
+  max: 'MAX',
+  min: 'MIN',
+  sum: 'SUM',
+  count: 'COUNT',
+};
+
 export class AlertEvaluator {
-  async evaluateRule(rule: AlertRule, metrics: MetricData[]): Promise<boolean> {
-    // 1. Filter metrics by duration window
-    const windowStart = new Date(
-      Date.now() - (this.parseDuration(rule.duration) as any),
-    );
-    const relevantMetrics = metrics.filter(
-      (m) =>
-        m.timestamp >= windowStart &&
-        m.service === rule.service &&
-        m.metric_type === rule.metric_type &&
-        (!rule.machine_id || m.machine_id === rule.machine_id),
-    );
-
-    // 2. Apply aggregation
-    const aggregatedValue = this.aggregate(relevantMetrics, rule.aggregation);
-
-    // 3. Compare with threshold
-    return this.compareValue(aggregatedValue, rule.condition, rule.threshold);
-  }
-
-  parseDuration(duration: string) {
-    throw new Error('Method not implemented.');
-  }
-
-  private aggregate(metrics: MetricData[], aggregation: string): number {
-    const values = metrics.map((m) => m.value);
-    switch (aggregation) {
-      case 'avg':
-        return values.reduce((a, b) => a + b, 0) / values.length;
-      case 'max':
-        return Math.max(...values);
-      case 'min':
-        return Math.min(...values);
-      case 'sum':
-        return values.reduce((a, b) => a + b, 0);
-      case 'count':
-        return values.length;
-      case 'none':
-        return values[values.length - 1] || 0;
-      default:
-        throw new Error(`Unknown aggregation: ${aggregation}`);
-    }
+  async evaluateRule(rule: AlertRule): Promise<boolean> {
+    const value = await this.getMetrics(rule);
+    // const threshold = await this.getMetrics(rule);
+    // TODO : handle threshold when it is not single value (in case of threshold is expression)
+    console.log('value', value);
+    return this.compareValue(value[0].value, rule.condition, rule.threshold);
   }
 
   private compareValue(
@@ -60,5 +34,111 @@ export class AlertEvaluator {
       default:
         throw new Error(`Unknown condition: ${condition}`);
     }
+  }
+
+  async getMetrics(rule: any) {
+    let metricData;
+    switch (rule.metric_type) {
+      case 'cpu':
+        metricData = await this.getCpuMetrics(rule);
+        break;
+      case 'memory':
+        metricData = await this.getMemoryMetrics(rule);
+        break;
+      case 'request':
+        metricData = await this.getRequestMetrics(rule);
+        break;
+      case 'error':
+        metricData = await this.getErrorMetrics(rule);
+        break;
+      case 'response':
+        metricData = await this.getResponseMetrics(rule);
+        break;
+    }
+    return metricData;
+  }
+  async getErrorMetrics(rule: any): Promise<any> {
+    const result = await pgClient.query(
+      `SELECT ${
+        AGGREGATION_MAP[rule.aggregation]
+      }(*) FROM request WHERE status_code >= 400 AND time >= now() - interval '${
+        rule.duration
+      }' AND service = '${rule.service}' ${
+        (rule.machine_id ?? []).length > 0
+          ? `AND machine_id IN (${rule.machine_id
+              .map((id) => `'${id}'`)
+              .join(',')})`
+          : ''
+      }`,
+    );
+    return result.rows;
+  }
+  async getResponseMetrics(rule: any): Promise<any> {
+    const result = await pgClient.query(
+      `SELECT ${
+        AGGREGATION_MAP[rule.aggregation]
+      }(response_time) FROM request WHERE status_code < 400 AND time >= now() - interval '${
+        rule.duration
+      }' AND service = '${rule.service}' ${
+        (rule.machine_id ?? []).length > 0
+          ? `AND machine_id IN (${rule.machine_id
+              .map((id) => `'${id}'`)
+              .join(',')})`
+          : ''
+      }`,
+    );
+    return result.rows;
+  }
+  async getRequestMetrics(rule: any): Promise<any> {
+    const result = await pgClient.query(
+      `SELECT ${
+        AGGREGATION_MAP[rule.aggregation]
+      }(*) FROM request WHERE time >= now() - interval '${
+        rule.duration
+      }' AND service = '${rule.service}' ${
+        (rule.machine_id ?? []).length > 0
+          ? `AND machine_id IN (${rule.machine_id
+              .map((id) => `'${id}'`)
+              .join(',')})`
+          : ''
+      }`,
+    );
+    return result.rows;
+  }
+  async getMemoryMetrics(rule: any): Promise<any> {
+    const result = await pgClient.query(
+      `SELECT ${
+        AGGREGATION_MAP[rule.aggregation]
+      }(value) FROM mem_usage WHERE time >= now() - interval '${
+        rule.duration
+      }' AND service = '${rule.service}' ${
+        (rule.machine_id ?? []).length > 0
+          ? `AND machine_id IN (${rule.machine_id
+              .map((id) => `'${id}'`)
+              .join(',')})`
+          : ''
+      }`,
+    );
+    return result.rows;
+  }
+  async getCpuMetrics(rule: any): Promise<any> {
+    const result = await pgClient.query(
+      `SELECT ${
+        AGGREGATION_MAP[rule.aggregation]
+      }(value) as value FROM cpu_usage WHERE time >= now() - interval '${
+        rule.duration
+      }' AND service = '${rule.service}' ${
+        ((rule.machine_id === 'undefined' ? undefined : rule.machine_id) ?? [])
+          .length > 0
+          ? `AND machine_id IN (${(
+              (rule.machine_id === 'undefined' ? undefined : rule.machine_id) ??
+              []
+            )
+              .map((id) => `'${id}'`)
+              .join(',')})`
+          : ''
+      }`,
+    );
+    return result.rows;
   }
 }

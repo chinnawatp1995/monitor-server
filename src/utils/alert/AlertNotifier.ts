@@ -2,21 +2,25 @@ import axios from 'axios';
 
 export class AlertNotificationService implements AlertNotifier {
   async notify(alert: { severity: string; message: string; details: any }) {
-    switch (alert.severity) {
-      case 'critical':
-        await Promise.all([this.sendEmail(alert), this.sendTelegram(alert)]);
-        break;
-      case 'warning':
-        await Promise.all([this.sendEmail(alert), this.sendTelegram(alert)]);
-        break;
-      case 'info':
-        await this.sendTelegram(alert);
-        break;
-    }
+    // switch (alert.severity) {
+    //   case 'critical':
+    //     await Promise.all([this.sendEmail(alert), this.sendTelegram(alert)]);
+    //     break;
+    //   case 'warning':
+    //     await Promise.all([this.sendEmail(alert), this.sendTelegram(alert)]);
+    //     break;
+    //   case 'info':
+    //     await this.sendTelegram(alert);
+    //     break;
+    // }
   }
 
   sendEmail(alert: { severity: string; message: string; details: any }): any {
     throw new Error('Method not implemented.');
+  }
+
+  async getRecepient(rule: any) {
+    debugger;
   }
 
   async sendTelegram(url: string, token: string, chatId: string, msg: string) {
@@ -30,5 +34,9 @@ export class AlertNotificationService implements AlertNotifier {
     }).catch(function (error) {
       console.log(error);
     });
+  }
+
+  fillTemplateString(template: string, data: any) {
+    return template.replace(/\${(\w+)}/g, (match, p1) => data[p1]);
   }
 }

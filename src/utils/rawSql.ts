@@ -276,8 +276,8 @@ export const serverTimeline = (
   `ORDER BY time, machine_id `;
 
 export const createAlertQuery = (alert: any) =>
-  `INSERT INTO alert_rule(name, service, machine_id, metric_type, aggregation, condition, threshold, duration, severity) ` +
-  `VALUES ('${alert.name}', '${alert.service}', '${alert.machineaId}', '${alert.metricType}', '${alert.aggregation}', '${alert.condition}', ${alert.threshold}, ${alert.duration}, '${alert.severity}')`;
+  `INSERT INTO alert_rule(name, service, machine_id, metric_type, aggregation, condition, threshold, duration, severity, message) ` +
+  `VALUES ('${alert.name}', '${alert.service}', '${alert.machineaId}', '${alert.metricType}', '${alert.aggregation}', '${alert.condition}', ${alert.threshold}, ${alert.duration}, '${alert.severity}', '${alert.message}')`;
 
 export const createRecipientQuery = (recipient: any) =>
   `INSERT INTO recipient(app, token, url, room) ` +
