@@ -13,7 +13,6 @@ export class AlertEvaluator {
     const value = await this.getMetrics(rule);
     // const threshold = await this.getMetrics(rule);
     // TODO : handle threshold when it is not single value (in case of threshold is expression)
-    console.log('value', value);
     return this.compareValue(value[0].value, rule.condition, rule.threshold);
   }
 
@@ -61,7 +60,7 @@ export class AlertEvaluator {
     const result = await pgClient.query(
       `SELECT ${
         AGGREGATION_MAP[rule.aggregation]
-      }(*) FROM request WHERE status_code >= 400 AND time >= now() - interval '${
+      }(*) as value FROM request WHERE status_code >= 400 AND time >= now() - interval '${
         rule.duration
       }' AND service = '${rule.service}' ${
         (rule.machine_id ?? []).length > 0
@@ -77,7 +76,7 @@ export class AlertEvaluator {
     const result = await pgClient.query(
       `SELECT ${
         AGGREGATION_MAP[rule.aggregation]
-      }(response_time) FROM request WHERE status_code < 400 AND time >= now() - interval '${
+      }(response_time) as value FROM request WHERE status_code < 400 AND time >= now() - interval '${
         rule.duration
       }' AND service = '${rule.service}' ${
         (rule.machine_id ?? []).length > 0
@@ -93,7 +92,7 @@ export class AlertEvaluator {
     const result = await pgClient.query(
       `SELECT ${
         AGGREGATION_MAP[rule.aggregation]
-      }(*) FROM request WHERE time >= now() - interval '${
+      }(*) as value FROM request WHERE time >= now() - interval '${
         rule.duration
       }' AND service = '${rule.service}' ${
         (rule.machine_id ?? []).length > 0
@@ -109,7 +108,7 @@ export class AlertEvaluator {
     const result = await pgClient.query(
       `SELECT ${
         AGGREGATION_MAP[rule.aggregation]
-      }(value) FROM mem_usage WHERE time >= now() - interval '${
+      }(value) as value FROM mem_usage WHERE time >= now() - interval '${
         rule.duration
       }' AND service = '${rule.service}' ${
         (rule.machine_id ?? []).length > 0

@@ -9,6 +9,7 @@ CREATE TABLE alert_rule (
     threshold       DOUBLE PRECISION NOT NULL,
     duration        INTEGER NOT NULL,  -- How long condition must be true before alerting
     severity        TEXT NOT NULL,  -- 'critical', 'warning', 'info'
+    silence_time    TEXT DEFAULT '1 hour',
     enabled         BOOLEAN NOT NULL DEFAULT true,
     message         TEXT,
     created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -19,18 +20,14 @@ CREATE INDEX idx_alert_rule_service ON alert_rule(service);
 CREATE INDEX idx_alert_rule_machine ON alert_rule(machine_id);
 
 CREATE TABLE alert_history (
-    id              SERIAL PRIMARY KEY,
+    time            TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     rule_id         INTEGER REFERENCES alert_rule(id),
     service         TEXT NOT NULL,
     machine_id      TEXT,
-    metric_type     TEXT NOT NULL,
-    metric_value    DOUBLE PRECISION NOT NULL,
-    triggered_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    resolved_at     TIMESTAMP WITH TIME ZONE,
-    status          TEXT NOT NULL  -- 'triggered', 'resolved'
+    metric_value    DOUBLE PRECISION NOT NULL
 );
 
-SELECT create_hypertable('alert_history', 'triggered_at');
+SELECT create_hypertable('alert_history', 'time');
 
 CREATE INDEX idx_alert_history_rule ON alert_history(rule_id);
 CREATE INDEX idx_alert_history_service ON alert_history(service);
