@@ -105,75 +105,83 @@ export async function sendTelegram(
   });
 }
 
-const alertRuleLangauge = {
-  INFIX_OPS: {
-    '+': function (a, b) {
-      return a + b;
+export const delegateTerm = async (alert: any) => {
+  const delegatedString = await (alert.rule as any).replaceAll(
+    validTerm,
+    async (match: string) => {
+      return await termDelegate(match, alert.duration);
     },
-    '-': function (a, b) {
-      return a - b;
-    },
-    '*': function (a, b) {
-      return a * b;
-    },
-    '/': function (a, b) {
-      return a / b;
-    },
-    '>': function (a, b) {
-      return a > b;
-    },
-    '<': function (a, b) {
-      return a < b;
-    },
-    '>=': function (a, b) {
-      return a >= b;
-    },
-    '<=': function (a, b) {
-      return a <= b;
-    },
-    '==': function (a, b) {
-      return a === b;
-    },
-    '!=': function (a, b) {
-      return a !== b;
-    },
-  },
-  PREFIX_OPS: {
-    SQRT: function (expr) {
-      return Math.sqrt(expr);
-    },
-    POW: function (expr) {
-      return Math.pow(expr[0], expr[1]);
-    },
-  },
-  PRECEDENCE: [['SQRT', 'POW'], ['*', '/'], ['+', '-'], [',']],
-  GROUP_OPEN: '(',
-  GROUP_CLOSE: ')',
-  SEPARATOR: ' ',
-  SYMBOLS: ['(', ')', '+', '-', '*', '/', ','],
-
-  termDelegate: function (term: string) {
-    // possible value [aggreation(AVG,COUNT,MIN,MAX,SUM)]([metrics]{service=[x,y,z],machineId=[a,b,c]})
-    const alert = {
-      aggregation: term.match(ruleTermRegex.aggregation),
-      metric: term.match(ruleTermRegex.metrics),
-      service: term.match(ruleTermRegex.service),
-      machine: term.match(ruleTermRegex.machine),
-    };
-  },
+  );
+  return delegatedString;
 };
 
-// const validTerm = /^[(AVG)(SUM)(COUNT)(MIN)(MAX)]([(cpu)(mem)(request)(response)(error)(error_rate)(rx_net)(tx_net)])$/i
+const validTerm =
+  /^(AVG|SUM|COUNT|MIN|MAX)\((cpu|mem|request|response|error|error_rate|rx_net|tx_net)\)$/i;
 
 export const METRIC_QUERY = {
-  cpu: (aggregation) => ``,
-  mem: (aggregation) => ``,
-  rxNetwork: (aggregation) => ``,
-  txNetwork: (aggregation) => ``,
-  request: (aggregation) => ``,
-  response: (aggregation) => ``,
-  errorRate: (aggregation) => ``,
-  error: (aggregation) => ``,
+  cpu: (alert: any) =>
+    `SELECT ${
+      alert.aggregation
+    }(cpu_usage) as value WHERE time >= now() - interval '${alert.duration}' 
+    ${alert.service ? `AND service IN (${alert.service.join(',')})` : ''}
+    ${alert.machine ? `AND machine_id IN (${alert.machine.join(',')})` : ''}
+  `,
+  mem: (alert: any) =>
+    `SELECT ${
+      alert.aggregation
+    }(memory_usage) as value WHERE time >= now() - interval '${alert.duration}' 
+    ${alert.service ? `AND service IN (${alert.service.join(',')})` : ''}
+    ${alert.machine ? `AND machine_id IN (${alert.machine.join(',')})` : ''}
+  `,
+  rxNetwork: (alert: any) => `
+    SELECT ${alert.aggregation}(rx_sec) as value 
+    FROM network_usage 
+    WHERE time >= now() - interval '${alert.duration}'
+    ${alert.service ? `AND service IN (${alert.service.join(',')})` : ''}
+    ${alert.machine ? `AND machine_id IN (${alert.machine.join(',')})` : ''}
+  `,
+  txNetwork: (alert: any) => `
+    SELECT ${alert.aggregation}(tx_sec) as value 
+    FROM network_usage 
+    WHERE time >= now() - interval '${alert.duration}'
+    ${alert.service ? `AND service IN (${alert.service.join(',')})` : ''}
+    ${alert.machine ? `AND machine_id IN (${alert.machine.join(',')})` : ''}
+  `,
+  request: (alert: any) => `
+    SELECT COUNT(*) as value 
+    FROM (
+      SELECT COUNT(*) as total_requests 
+      FROM request 
+      WHERE time >= now() - interval '${alert.duration}'
+      ${alert.service ? `AND service IN (${alert.service.join(',')})` : ''}
+      ${alert.machine ? `AND machine_id IN (${alert.machine.join(',')})` : ''}
+    ) sub
+  `,
+  response: (alert: any) => `
+    SELECT ${alert.aggregation}(response_time) as value 
+    FROM request 
+    WHERE time >= now() - interval '${alert.duration}'
+    ${alert.service ? `AND service IN (${alert.service.join(',')})` : ''}
+    ${alert.machine ? `AND machine_id IN (${alert.machine.join(',')})` : ''}
+  `,
+  errorRate: (alert: any) => `
+    SELECT (COUNT(CASE WHEN status_code >= 400 THEN 1 END) * 100.0 / COUNT(*)) as value 
+    FROM request 
+    WHERE time >= now() - interval '${alert.duration}'
+    ${alert.service ? `AND service IN (${alert.service.join(',')})` : ''}
+    ${alert.machine ? `AND machine_id IN (${alert.machine.join(',')})` : ''}
+  `,
+  error: (alert: any) => `
+    SELECT ${alert.aggregation}(error_count) as value 
+    FROM (
+      SELECT COUNT(*) as error_count 
+      FROM request 
+      WHERE status_code >= 400 
+      AND time >= now() - interval '${alert.duration}'
+      ${alert.service ? `AND service IN (${alert.service.join(',')})` : ''}
+      ${alert.machine ? `AND machine_id IN (${alert.machine.join(',')})` : ''}
+    ) sub
+  `,
 };
 
 const getDataFromRule = async (
@@ -181,17 +189,34 @@ const getDataFromRule = async (
   metric: string,
   service: string[],
   machine: string[],
+  duration: string,
 ) => {
   const result = await pgClient.query({
-    text: METRIC_QUERY[metric](aggregation),
+    text: METRIC_QUERY[metric]({ aggregation, service, machine, duration }),
   });
   return result.rows;
 };
 
 const ruleTermRegex = {
-  aggregation: /[(AVG)(SUM)(COUNT)(MIN)(MAX)]/i,
-  metrics:
-    /[(cpu)(mem)(request)(response)(error)(error_rate)(rx_net)(tx_net)]/i,
-  service: /{services=[.*]}/i,
-  machine: /{machine_ids=[.*]}/,
+  aggregation: /AVG|SUM|COUNT|MIN|MAX/i,
+  metrics: /cpu|mem|request|response|error|error_rate|rx_net|tx_net/i,
+  service: /{services=\[([\w,]+)\]}$/i,
+  machine: /{machine_ids=\[([\w,]+)\]}$/i,
 };
+
+async function termDelegate(term: string, duration: string) {
+  const alert = {
+    aggregation: term.match(ruleTermRegex.aggregation)[0],
+    metric: term.match(ruleTermRegex.metrics)[0],
+    service: term.match(ruleTermRegex.service)[0].split('=')[1].split(','),
+    machine: term.match(ruleTermRegex.machine)[0].split('=')[1].split(','),
+    duration,
+  };
+  return getDataFromRule(
+    alert.aggregation,
+    alert.metric,
+    alert.service,
+    alert.machine,
+    alert.duration,
+  );
+}

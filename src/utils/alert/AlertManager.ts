@@ -1,7 +1,6 @@
 import { pgClient } from 'src/app.service';
 import { AlertEvaluator } from './AlertEvaluator';
 import { sendTelegram } from '../util-functions';
-import { init } from 'expressionparser';
 
 export const EXISTING_ALERT_RULE = [];
 

@@ -1,4 +1,5 @@
 import { pgClient } from 'src/app.service';
+import { delegateTerm } from '../util-functions';
 
 const AGGREGATION_MAP = {
   avg: 'AVG',
@@ -10,15 +11,21 @@ const AGGREGATION_MAP = {
 
 export class AlertEvaluator {
   async evaluateRule(rule: AlertRule) {
-    const value = await this.getMetrics(rule);
+    const delegatedRule = await delegateTerm(rule);
+    const result = eval(delegatedRule);
+    const value = await this.getMetrics(rule); // TODO : instead of query again , use the left value from parser
     // const threshold = await this.getMetrics(rule);
     // TODO : handle threshold when it is not single value (in case of threshold is expression)
+    // return {
+    //   isTriggered: this.compareValue(
+    //     value[0].value,
+    //     rule.condition,
+    //     rule.threshold,
+    //   ),
+    //   metric_value: value[0].value,
+    // };
     return {
-      isTriggered: this.compareValue(
-        value[0].value,
-        rule.condition,
-        rule.threshold,
-      ),
+      isTriggered: result,
       metric_value: value[0].value,
     };
   }
