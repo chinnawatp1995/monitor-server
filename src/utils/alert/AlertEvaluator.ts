@@ -19,7 +19,7 @@ export class AlertEvaluator {
         rule.condition,
         rule.threshold,
       ),
-      metric_value: value,
+      metric_value: value[0].value,
     };
   }
 

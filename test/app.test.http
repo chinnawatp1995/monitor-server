@@ -195,18 +195,19 @@ POST {{baseUrl}}/create-recipient
 Content-Type: {{contentType}}
 
 {
-    "app": "app_01",
-    "token": "token_01",
-    "url": "url_01",
-    "room": "room_01"
+    "app": "telegram",
+    "token": "7731705891:AAEg9pvLFjTAlnUvzhhN2QpmgImIm14FUpM",
+    "url": "https://api.telegram.org/bot",
+    "room": "-4565250427"
 }
 
 
 ###
 # @name add-recipient-to-alert
-POST {{baseUrl}}/add-recipient-to-alert
+POST {{baseUrl}}/add-recipient
 Content-Type: {{contentType}}
 
 {
-    
+    "ruleId": "1",
+    "recipientIds": ["1", "2"]
 }

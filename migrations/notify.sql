@@ -6,8 +6,8 @@ CREATE TABLE recipient (
     room    TEXT NOT NULL
 );
 
-CREATE TABLE recipient_rule (
+CREATE TABLE alert_recipient (
     recipient_id INTEGER REFERENCES recipient(id),
-    rule_id INTEGER NOT NULL,
+    rule_id INTEGER REFERENCES alert_rule(id),
     PRIMARY KEY (recipient_id, rule_id)
 );

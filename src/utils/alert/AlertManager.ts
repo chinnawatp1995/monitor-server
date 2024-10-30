@@ -1,6 +1,7 @@
 import { pgClient } from 'src/app.service';
 import { AlertEvaluator } from './AlertEvaluator';
 import { sendTelegram } from '../util-functions';
+import { init } from 'expressionparser';
 
 export const EXISTING_ALERT_RULE = [];
 
@@ -53,7 +54,7 @@ export class AlertManager {
 
     const alerts = await this.getAlertHistory(alert, rule.silence_time);
 
-    if (alerts.length === 0) {
+    if (alerts.length > 0) {
       // Early return when already alert within defined time window
       return;
     }
@@ -79,14 +80,17 @@ export class AlertManager {
   }
 
   async saveAlert(alert: any) {
+    console.log(
+      `INSERT INTO alert_history(rule_id, metric_value) VALUES ('${alert.rule_id}', ${alert.metric_value})`,
+    );
     await pgClient.query({
-      text: `INSERT INTO alert_history(rule_id, metric_value) VALUE ('${alert.rule_id}', ${alert.metric_value})`,
+      text: `INSERT INTO alert_history(rule_id, metric_value) VALUES ('${alert.rule_id}', ${alert.metric_value})`,
     });
   }
 
   async getAlertHistory(alert: any, duration: string) {
     const alerts = await pgClient.query({
-      text: `SELECT * FROM alert_history WHERE rule_id = '${alert.rule_id}' time >= now() - interval '${duration}'`,
+      text: `SELECT * FROM alert_history WHERE rule_id = '${alert.rule_id}' AND time >= now() - interval '${duration}'`,
     });
     return alerts.rows;
   }

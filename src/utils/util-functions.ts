@@ -2,6 +2,7 @@ import { groupBy, keyBy } from 'lodash';
 import * as moment from 'moment';
 import axios from 'axios';
 import { cpuData } from './test-data';
+import { pgClient } from 'src/app.service';
 
 export const getTIMESTAMPTZ = () => {
   const date = new Date();
@@ -82,17 +83,7 @@ export const changeTimeZone = (
 };
 
 export const alertRuleParser = (rules: string) => {
-  /*
-  {
-    name,
-    rules: {
-      expression: /aggregationFunction(identifier)/  /operator/  /aggregationFunc(identifier)/  ** can be recursive ,
-      duration,
-      severity possible value [danger, ],
-      message
-    }
-  }
-  */
+  const token = rules.split(/'\s+'/);
 };
 
 export async function sendTelegram(
@@ -113,3 +104,94 @@ export async function sendTelegram(
     console.log(error);
   });
 }
+
+const alertRuleLangauge = {
+  INFIX_OPS: {
+    '+': function (a, b) {
+      return a + b;
+    },
+    '-': function (a, b) {
+      return a - b;
+    },
+    '*': function (a, b) {
+      return a * b;
+    },
+    '/': function (a, b) {
+      return a / b;
+    },
+    '>': function (a, b) {
+      return a > b;
+    },
+    '<': function (a, b) {
+      return a < b;
+    },
+    '>=': function (a, b) {
+      return a >= b;
+    },
+    '<=': function (a, b) {
+      return a <= b;
+    },
+    '==': function (a, b) {
+      return a === b;
+    },
+    '!=': function (a, b) {
+      return a !== b;
+    },
+  },
+  PREFIX_OPS: {
+    SQRT: function (expr) {
+      return Math.sqrt(expr);
+    },
+    POW: function (expr) {
+      return Math.pow(expr[0], expr[1]);
+    },
+  },
+  PRECEDENCE: [['SQRT', 'POW'], ['*', '/'], ['+', '-'], [',']],
+  GROUP_OPEN: '(',
+  GROUP_CLOSE: ')',
+  SEPARATOR: ' ',
+  SYMBOLS: ['(', ')', '+', '-', '*', '/', ','],
+
+  termDelegate: function (term: string) {
+    // possible value [aggreation(AVG,COUNT,MIN,MAX,SUM)]([metrics]{service=[x,y,z],machineId=[a,b,c]})
+    const alert = {
+      aggregation: term.match(ruleTermRegex.aggregation),
+      metric: term.match(ruleTermRegex.metrics),
+      service: term.match(ruleTermRegex.service),
+      machine: term.match(ruleTermRegex.machine),
+    };
+  },
+};
+
+// const validTerm = /^[(AVG)(SUM)(COUNT)(MIN)(MAX)]([(cpu)(mem)(request)(response)(error)(error_rate)(rx_net)(tx_net)])$/i
+
+export const METRIC_QUERY = {
+  cpu: (aggregation) => ``,
+  mem: (aggregation) => ``,
+  rxNetwork: (aggregation) => ``,
+  txNetwork: (aggregation) => ``,
+  request: (aggregation) => ``,
+  response: (aggregation) => ``,
+  errorRate: (aggregation) => ``,
+  error: (aggregation) => ``,
+};
+
+const getDataFromRule = async (
+  aggregation: string,
+  metric: string,
+  service: string[],
+  machine: string[],
+) => {
+  const result = await pgClient.query({
+    text: METRIC_QUERY[metric](aggregation),
+  });
+  return result.rows;
+};
+
+const ruleTermRegex = {
+  aggregation: /[(AVG)(SUM)(COUNT)(MIN)(MAX)]/i,
+  metrics:
+    /[(cpu)(mem)(request)(response)(error)(error_rate)(rx_net)(tx_net)]/i,
+  service: /{services=[.*]}/i,
+  machine: /{machine_ids=[.*]}/,
+};

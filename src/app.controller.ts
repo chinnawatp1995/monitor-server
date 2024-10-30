@@ -87,6 +87,11 @@ export class AppController {
     return await this.appService.serverTimeline(filter);
   }
 
+  @Post('alert-rules')
+  async getAlert(@Body() filter: TFilterReq) {
+    return await this.appService.getAlert(filter);
+  }
+
   @Post('create-alert')
   async createAlert(@Body() alert: any) {
     return await this.appService.createAlert(alert);
@@ -95,5 +100,10 @@ export class AppController {
   @Post('create-recipient')
   async createRecipient(@Body() recipient: any) {
     return await this.appService.createRecipient(recipient);
+  }
+
+  @Post('add-recipient')
+  async addRecipientToAlert(@Body() body: any) {
+    return await this.appService.addRecipientToAlert(body);
   }
 }

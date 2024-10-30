@@ -277,7 +277,7 @@ export const serverTimeline = (
 
 export const createAlertQuery = (alert: any) =>
   `INSERT INTO alert_rule(name, service, machine_id, metric_type, aggregation, condition, threshold, duration, severity, message) ` +
-  `VALUES ('${alert.name}', '${alert.service}', '${alert.machineaId}', '${alert.metricType}', '${alert.aggregation}', '${alert.condition}', ${alert.threshold}, ${alert.duration}, '${alert.severity}', '${alert.message}')`;
+  `VALUES ('${alert.name}', '${alert.service}', '${alert.machineId}', '${alert.metricType}', '${alert.aggregation}', '${alert.condition}', ${alert.threshold}, ${alert.duration}, '${alert.severity}', '${alert.message}')`;
 
 export const createRecipientQuery = (recipient: any) =>
   `INSERT INTO recipient(app, token, url, room) ` +
@@ -286,5 +286,12 @@ export const createRecipientQuery = (recipient: any) =>
 export const getAlertRecipientsQuery = (ruleId: string) =>
   `SELECT * FROM alert_recipient WHERE rule_id = ${ruleId}`;
 
-export const addRecipientToAlertQuery = (ruleId: string, recipientId: string) =>
-  `INSERT INTO alert_recipient(rule_id, recipient_id) VALUES (${ruleId}, ${recipientId})`;
+export const addRecipientToAlertQuery = (
+  ruleId: string,
+  recipientIds: string[],
+) =>
+  `INSERT INTO alert_recipient(rule_id, recipient_id) VALUES ${recipientIds
+    .map((r) => `('${ruleId}', '${r}')`)
+    .join(',')}`;
+
+export const getAlertQuery = () => `SELECT * FROM alert_rule`;

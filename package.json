@@ -26,6 +26,7 @@
     "@types/lodash": "^4.17.10",
     "@types/luxon": "^3.4.2",
     "axios": "^1.7.7",
+    "expressionparser": "^1.1.5",
     "lodash": "^4.17.21",
     "luxon": "^3.5.0",
     "moment": "^2.30.1",

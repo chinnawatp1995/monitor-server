@@ -9,6 +9,7 @@ import {
   createRecipientQuery,
   createRequestQuery,
   createServerStatus,
+  getAlertQuery,
   getCpuQuery,
   getCurrentServerStatusQuery,
   getMemQuery,
@@ -395,9 +396,18 @@ export class AppService {
     return {};
   }
 
-  async addRecipientToAlert(ruleId: string, recipientId: string) {
+  async addRecipientToAlert({ recipientIds, ruleId }) {
     await this.pgClient.query({
-      text: addRecipientToAlertQuery(ruleId, recipientId),
+      text: addRecipientToAlertQuery(ruleId, recipientIds),
     });
+  }
+
+  async getAlert(filter: TFilterReq) {
+    const { startTime, endTime, services, machineIds } = filter;
+    return (
+      await this.pgClient.query({
+        text: getAlertQuery(),
+      })
+    ).rows;
   }
 }
