@@ -1,157 +1,75 @@
 import { pgClient } from 'src/app.service';
-import { delegateTerm } from '../util-functions';
-
-const AGGREGATION_MAP = {
-  avg: 'AVG',
-  max: 'MAX',
-  min: 'MIN',
-  sum: 'SUM',
-  count: 'COUNT',
-};
+import { delegateTerm, METRIC_QUERY } from '../util-functions';
 
 export class AlertEvaluator {
-  async evaluateRule(rule: AlertRule) {
+  private validTerm =
+    /(AVG|SUM|COUNT|MIN|MAX)\((cpu|mem|request|response|error|error_rate|rx_net|tx_net)(\{[^}]*\})*(,.*'(\d+ (minute|hour|day|week|month|year)s*)')*\)/gi;
+  private ruleTermRegex = {
+    aggregation: /AVG|SUM|COUNT|MIN|MAX/i,
+    metrics: /cpu|mem|request|response|error|error_rate|rx_net|tx_net/i,
+    paramRegex: /{.*}/,
+    service: /services=\[([\w,\-]+)\]/i,
+    machine: /machines=\[([\w,\-]+)\]/i,
+    time: /'(\d+ (minute|hour|day|week|month|year)s*)'/,
+  };
+  private METRIC_QUERY = METRIC_QUERY;
+
+  async evaluateRule(rule: any) {
     const delegatedRule = await delegateTerm(rule);
     const result = eval(delegatedRule);
-    const value = await this.getMetrics(rule); // TODO : instead of query again , use the left value from parser
-    // const threshold = await this.getMetrics(rule);
-    // TODO : handle threshold when it is not single value (in case of threshold is expression)
-    // return {
-    //   isTriggered: this.compareValue(
-    //     value[0].value,
-    //     rule.condition,
-    //     rule.threshold,
-    //   ),
-    //   metric_value: value[0].value,
-    // };
     return {
       isTriggered: result,
-      metric_value: value[0].value,
     };
   }
 
-  private compareValue(
-    value: number,
-    condition: string,
-    threshold: number,
-  ): boolean {
-    switch (condition) {
-      case '>':
-        return value > threshold;
-      case '<':
-        return value < threshold;
-      case '>=':
-        return value >= threshold;
-      case '<=':
-        return value <= threshold;
-      default:
-        throw new Error(`Unknown condition: ${condition}`);
-    }
+  private async delegate(term: string, duration = '1 days') {
+    const param = term.match(this.ruleTermRegex.paramRegex)?.[0];
+
+    const alert = {
+      aggregation: term.match(this.ruleTermRegex.aggregation)[0],
+      metric: term.match(this.ruleTermRegex.metrics)[0],
+      service: param?.match(this.ruleTermRegex.service)?.[1]?.split(','),
+      machine: param?.match(this.ruleTermRegex.machine)?.[1]?.split(','),
+      duration: term.match(this.ruleTermRegex.time)?.[1] ?? duration,
+    };
+    return await this.getDataFromRule(
+      alert.aggregation,
+      alert.metric,
+      alert.service,
+      alert.machine,
+      alert.duration,
+    );
   }
 
-  async getMetrics(rule: any) {
-    let metricData;
-    switch (rule.metric_type) {
-      case 'cpu':
-        metricData = await this.getCpuMetrics(rule);
-        break;
-      case 'memory':
-        metricData = await this.getMemoryMetrics(rule);
-        break;
-      case 'request':
-        metricData = await this.getRequestMetrics(rule);
-        break;
-      case 'error':
-        metricData = await this.getErrorMetrics(rule);
-        break;
-      case 'response':
-        metricData = await this.getResponseMetrics(rule);
-        break;
+  delegateTerm = async (rule: any) => {
+    const matchString = rule.expression.match(this.validTerm);
+    let delegatedExpression = rule.expression;
+    for (const expression of matchString) {
+      const delegatedTerm = await this.delegate(expression, rule.duration);
+      // console.log(delegatedExp);
+      delegatedExpression = delegatedExpression.replace(
+        expression,
+        delegatedTerm,
+      );
     }
-    return metricData;
-  }
-  async getErrorMetrics(rule: any): Promise<any> {
-    const result = await pgClient.query(
-      `SELECT ${
-        AGGREGATION_MAP[rule.aggregation]
-      }(*) as value FROM request WHERE status_code >= 400 AND time >= now() - interval '${
-        rule.duration
-      }' AND service = '${rule.service}' ${
-        (rule.machine_id ?? []).length > 0
-          ? `AND machine_id IN (${rule.machine_id
-              .map((id) => `'${id}'`)
-              .join(',')})`
-          : ''
-      }`,
-    );
-    return result.rows;
-  }
-  async getResponseMetrics(rule: any): Promise<any> {
-    const result = await pgClient.query(
-      `SELECT ${
-        AGGREGATION_MAP[rule.aggregation]
-      }(response_time) as value FROM request WHERE status_code < 400 AND time >= now() - interval '${
-        rule.duration
-      }' AND service = '${rule.service}' ${
-        (rule.machine_id ?? []).length > 0
-          ? `AND machine_id IN (${rule.machine_id
-              .map((id) => `'${id}'`)
-              .join(',')})`
-          : ''
-      }`,
-    );
-    return result.rows;
-  }
-  async getRequestMetrics(rule: any): Promise<any> {
-    const result = await pgClient.query(
-      `SELECT ${
-        AGGREGATION_MAP[rule.aggregation]
-      }(*) as value FROM request WHERE time >= now() - interval '${
-        rule.duration
-      }' AND service = '${rule.service}' ${
-        (rule.machine_id ?? []).length > 0
-          ? `AND machine_id IN (${rule.machine_id
-              .map((id) => `'${id}'`)
-              .join(',')})`
-          : ''
-      }`,
-    );
-    return result.rows;
-  }
-  async getMemoryMetrics(rule: any): Promise<any> {
-    const result = await pgClient.query(
-      `SELECT ${
-        AGGREGATION_MAP[rule.aggregation]
-      }(value) as value FROM mem_usage WHERE time >= now() - interval '${
-        rule.duration
-      }' AND service = '${rule.service}' ${
-        (rule.machine_id ?? []).length > 0
-          ? `AND machine_id IN (${rule.machine_id
-              .map((id) => `'${id}'`)
-              .join(',')})`
-          : ''
-      }`,
-    );
-    return result.rows;
-  }
-  async getCpuMetrics(rule: any): Promise<any> {
-    const result = await pgClient.query(
-      `SELECT ${
-        AGGREGATION_MAP[rule.aggregation]
-      }(value) as value FROM cpu_usage WHERE time >= now() - interval '${
-        rule.duration
-      }' AND service = '${rule.service}' ${
-        ((rule.machine_id === 'undefined' ? undefined : rule.machine_id) ?? [])
-          .length > 0
-          ? `AND machine_id IN (${(
-              (rule.machine_id === 'undefined' ? undefined : rule.machine_id) ??
-              []
-            )
-              .map((id) => `'${id}'`)
-              .join(',')})`
-          : ''
-      }`,
-    );
-    return result.rows;
-  }
+    return delegatedExpression;
+  };
+
+  getDataFromRule = async (
+    aggregation: string,
+    metric: string,
+    service: string[],
+    machine: string[],
+    duration: string,
+  ) => {
+    const result = await pgClient.query({
+      text: this.METRIC_QUERY[metric.toLowerCase()]({
+        aggregation,
+        service,
+        machine,
+        duration,
+      }),
+    });
+    return result.rows[0].value;
+  };
 }

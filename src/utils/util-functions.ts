@@ -101,22 +101,18 @@ export async function sendTelegram(
   });
 }
 
-export const delegateTerm = async (alert: any) => {
-  // const delegatedString = await (alert.rule as any).replaceAll(
-  //   validTerm,
-  //   async (match: string) => {
-  //     return await delegate(match, alert.duration);
-  //   },
-  // );
-  const matchString = alert.rule.match(validTerm);
-  // console.log(matchString);
+export const delegateTerm = async (rule: any) => {
+  const matchString = rule.expression.match(validTerm);
+  let delegatedExpression = rule.expression;
   for (const expression of matchString) {
-    const delegatedExp = await delegate(expression, alert.duration);
+    const delegatedTerm = await delegate(expression, rule.duration);
     // console.log(delegatedExp);
-    alert.rule = alert.rule.replace(expression, delegatedExp);
+    delegatedExpression = delegatedExpression.replace(
+      expression,
+      delegatedTerm,
+    );
   }
-  // console.log(alert.rule);
-  return alert.rule;
+  return delegatedExpression;
 };
 
 const validTerm =
@@ -205,7 +201,7 @@ export const METRIC_QUERY = {
               .join(',')})`
           : ''
       }
-    ) sub
+    )
   `,
   response: (alert: any) => `
     SELECT ${alert.aggregation}(response_time) as value 
@@ -256,7 +252,7 @@ export const METRIC_QUERY = {
               .join(',')})`
           : ''
       }
-    ) sub
+    )
   `,
 };
 
@@ -267,14 +263,6 @@ const getDataFromRule = async (
   machine: string[],
   duration: string,
 ) => {
-  // console.log(
-  //   METRIC_QUERY[metric.toLowerCase()]({
-  //     aggregation,
-  //     service,
-  //     machine,
-  //     duration,
-  //   }),
-  // );
   const result = await pgClient.query({
     text: METRIC_QUERY[metric.toLowerCase()]({
       aggregation,
@@ -283,7 +271,6 @@ const getDataFromRule = async (
       duration,
     }),
   });
-  // console.log(result.rows);
   return result.rows[0].value;
 };
 
@@ -306,7 +293,6 @@ async function delegate(term: string, duration = '1 days') {
     machine: param?.match(ruleTermRegex.machine)?.[1]?.split(','),
     duration: term.match(ruleTermRegex.time)?.[1] ?? duration,
   };
-  // console.log(alert);
   return await getDataFromRule(
     alert.aggregation,
     alert.metric,
