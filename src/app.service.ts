@@ -21,7 +21,7 @@ import {
   getTransferedNetworkQuery,
   serverTimeline,
 } from './utils/rawSql';
-import { fillMissingBuckets } from './utils/util-functions';
+import { fillMissingBuckets, testRuleParser } from './utils/util-functions';
 import { TFilterReq, TMetricsReq } from './utils/types/request.type';
 import { AlertManager } from './utils/alert/AlertManager';
 
@@ -53,6 +53,7 @@ export class AppService {
     setInterval(() => {
       alertManager.checkRules();
     }, 5000);
+    // await testRuleParser();
   }
 
   async collectMetrics(metrics: TMetricsReq) {

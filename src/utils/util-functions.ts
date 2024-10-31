@@ -82,10 +82,6 @@ export const changeTimeZone = (
   debugger;
 };
 
-export const alertRuleParser = (rules: string) => {
-  const token = rules.split(/'\s+'/);
-};
-
 export async function sendTelegram(
   url: string,
   token: string,
@@ -106,30 +102,50 @@ export async function sendTelegram(
 }
 
 export const delegateTerm = async (alert: any) => {
-  const delegatedString = await (alert.rule as any).replaceAll(
-    validTerm,
-    async (match: string) => {
-      return await termDelegate(match, alert.duration);
-    },
-  );
-  return delegatedString;
+  // const delegatedString = await (alert.rule as any).replaceAll(
+  //   validTerm,
+  //   async (match: string) => {
+  //     return await delegate(match, alert.duration);
+  //   },
+  // );
+  const matchString = alert.rule.match(validTerm);
+  // console.log(matchString);
+  for (const expression of matchString) {
+    const delegatedExp = await delegate(expression, alert.duration);
+    // console.log(delegatedExp);
+    alert.rule = alert.rule.replace(expression, delegatedExp);
+  }
+  // console.log(alert.rule);
+  return alert.rule;
 };
 
 const validTerm =
-  /^(AVG|SUM|COUNT|MIN|MAX)\((cpu|mem|request|response|error|error_rate|rx_net|tx_net)\)$/i;
+  /(AVG|SUM|COUNT|MIN|MAX)\((cpu|mem|request|response|error|error_rate|rx_net|tx_net)(\{[^}]*\})*(,.*'(\d+ (minute|hour|day|week|month|year)s*)')*\)/gi;
 
 export const METRIC_QUERY = {
   cpu: (alert: any) =>
     `SELECT ${
       alert.aggregation
-    }(cpu_usage) as value WHERE time >= now() - interval '${alert.duration}' 
-    ${alert.service ? `AND service IN (${alert.service.join(',')})` : ''}
-    ${alert.machine ? `AND machine_id IN (${alert.machine.join(',')})` : ''}
+    }(value) as value FROM cpu_usage WHERE time >= now() - interval '${
+      alert.duration
+    }' 
+    ${
+      alert.service
+        ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      alert.machine
+        ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
+        : ''
+    }
   `,
   mem: (alert: any) =>
     `SELECT ${
       alert.aggregation
-    }(memory_usage) as value WHERE time >= now() - interval '${alert.duration}' 
+    }(value) as value FROM mem_usage WHERE time >= now() - interval '${
+      alert.duration
+    }' 
     ${alert.service ? `AND service IN (${alert.service.join(',')})` : ''}
     ${alert.machine ? `AND machine_id IN (${alert.machine.join(',')})` : ''}
   `,
@@ -191,28 +207,47 @@ const getDataFromRule = async (
   machine: string[],
   duration: string,
 ) => {
+  // console.log(
+  //   METRIC_QUERY[metric.toLowerCase()]({
+  //     aggregation,
+  //     service,
+  //     machine,
+  //     duration,
+  //   }),
+  // );
   const result = await pgClient.query({
-    text: METRIC_QUERY[metric]({ aggregation, service, machine, duration }),
+    text: METRIC_QUERY[metric.toLowerCase()]({
+      aggregation,
+      service,
+      machine,
+      duration,
+    }),
   });
-  return result.rows;
+  // console.log(result.rows);
+  return result.rows[0].value;
 };
 
 const ruleTermRegex = {
   aggregation: /AVG|SUM|COUNT|MIN|MAX/i,
   metrics: /cpu|mem|request|response|error|error_rate|rx_net|tx_net/i,
-  service: /{services=\[([\w,]+)\]}$/i,
-  machine: /{machine_ids=\[([\w,]+)\]}$/i,
+  paramRegex: /{.*}/,
+  service: /services=\[([\w,\-]+)\]/i,
+  machine: /machines=\[([\w,\-]+)\]/i,
+  time: /'(\d+ (minute|hour|day|week|month|year)s*)'/,
 };
 
-async function termDelegate(term: string, duration: string) {
+async function delegate(term: string, duration = '1 days') {
+  const param = term.match(ruleTermRegex.paramRegex)?.[0];
+
   const alert = {
     aggregation: term.match(ruleTermRegex.aggregation)[0],
     metric: term.match(ruleTermRegex.metrics)[0],
-    service: term.match(ruleTermRegex.service)[0].split('=')[1].split(','),
-    machine: term.match(ruleTermRegex.machine)[0].split('=')[1].split(','),
-    duration,
+    service: param?.match(ruleTermRegex.service)?.[1]?.split(','),
+    machine: param?.match(ruleTermRegex.machine)?.[1]?.split(','),
+    duration: term.match(ruleTermRegex.time)?.[1] ?? duration,
   };
-  return getDataFromRule(
+  // console.log(alert);
+  return await getDataFromRule(
     alert.aggregation,
     alert.metric,
     alert.service,
@@ -220,3 +255,39 @@ async function termDelegate(term: string, duration: string) {
     alert.duration,
   );
 }
+
+const testExpressions = [
+  'AVG(CPU{services=[s1,s2,s3],machines=[x,y,z]})',
+  'COUNT(error{services=[s1]})',
+  'MAX(response{machine=[mid_01,mid_02]})',
+];
+
+const testRules = [
+  "AVG(CPU{services=[liberator-api],machines=[machine_03]}) > AVG(CPU, '1 days')",
+  // 'COUNT(error{services=[s1]}) > 1000',
+  // "MAX(response{machine=[mid_01,mid_02]}) > MAX(response, '7 days')",
+];
+
+export const testExpressionParser = () => {
+  for (const exp of testExpressions) {
+    const alert = {
+      aggregation: exp.match(ruleTermRegex.aggregation)[0],
+      metric: exp.match(ruleTermRegex.metrics)[0],
+      service: exp.match(ruleTermRegex.service)?.[1].split(','),
+      machine: exp.match(ruleTermRegex.machine)?.[1].split(','),
+      duration: exp.match(ruleTermRegex.time)?.[1],
+    };
+  }
+};
+
+export const testRuleParser = async () => {
+  for (const rule of testRules) {
+    const alertRule = {
+      rule,
+      duration: '7 days',
+    };
+    const a = await delegateTerm(alertRule);
+    console.log(a);
+    console.log(`eval(${a})`, eval(a));
+  }
+};
