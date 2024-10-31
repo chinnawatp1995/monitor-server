@@ -10,7 +10,7 @@ export class AlertEvaluator {
     paramRegex: /{.*}/,
     service: /services=\[([\w,\-]+)\]/i,
     machine: /machines=\[([\w,\-]+)\]/i,
-    time: /'(\d+ (minute|hour|day|week|month|year)s*)'/,
+    time: /['"](\d+ (minute|hour|day|week|month|year)s*)["']/,
   };
   private METRIC_QUERY = METRIC_QUERY;
 
