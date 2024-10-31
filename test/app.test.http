@@ -178,14 +178,9 @@ POST {{baseUrl}}/create-alert
 Content-Type: {{contentType}}
 
 {
-    "name": "alert_01",
-    "service": "jobA",
-    "machineId": "machine_01",
-    "metricType": "cpu",
-    "aggregation": "avg",
-    "condition": ">",
-    "threshold": 10,
-    "duration": 10,
+    "name": "alert_cpu",
+    "expression": "AVG(CPU{services=[liberator-api],machines=[machine_03]}) > AVG(CPU, "1 days")",
+    "duration": "5 seconds",
     "severity": "danger"
 }
 

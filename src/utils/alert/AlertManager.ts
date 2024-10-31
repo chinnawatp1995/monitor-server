@@ -46,7 +46,7 @@ export class AlertManager {
       return;
     }
 
-    await this.saveAlert({ rule_id: rule.id });
+    await this.saveAlert(rule.id);
 
     // await this.notifier.notify({
     //   severity: rule.severity,
@@ -66,15 +66,15 @@ export class AlertManager {
     );
   }
 
-  async saveAlert(alert: any) {
+  async saveAlert(ruleId: any) {
     await pgClient.query({
-      text: `INSERT INTO alert_history(rule_id, metric_value) VALUES ('${alert.rule_id}')`,
+      text: `INSERT INTO alert_history(rule_id) VALUES ('${ruleId}')`,
     });
   }
 
-  async getAlertHistory(alert: any, duration: string) {
+  async getAlertHistory(ruleId: any, duration: string) {
     const alerts = await pgClient.query({
-      text: `SELECT * FROM alert_history WHERE rule_id = '${alert.rule_id}' AND time >= now() - interval '${duration}'`,
+      text: `SELECT * FROM alert_history WHERE rule_id = '${ruleId}' AND time >= now() - interval '${duration}'`,
     });
     return alerts.rows;
   }
