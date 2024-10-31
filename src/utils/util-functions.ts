@@ -146,22 +146,46 @@ export const METRIC_QUERY = {
     }(value) as value FROM mem_usage WHERE time >= now() - interval '${
       alert.duration
     }' 
-    ${alert.service ? `AND service IN (${alert.service.join(',')})` : ''}
-    ${alert.machine ? `AND machine_id IN (${alert.machine.join(',')})` : ''}
+    ${
+      alert.service
+        ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      alert.machine
+        ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
+        : ''
+    }
   `,
   rxNetwork: (alert: any) => `
     SELECT ${alert.aggregation}(rx_sec) as value 
     FROM network_usage 
     WHERE time >= now() - interval '${alert.duration}'
-    ${alert.service ? `AND service IN (${alert.service.join(',')})` : ''}
-    ${alert.machine ? `AND machine_id IN (${alert.machine.join(',')})` : ''}
+    ${
+      alert.service
+        ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      alert.machine
+        ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
+        : ''
+    }
   `,
   txNetwork: (alert: any) => `
     SELECT ${alert.aggregation}(tx_sec) as value 
     FROM network_usage 
     WHERE time >= now() - interval '${alert.duration}'
-    ${alert.service ? `AND service IN (${alert.service.join(',')})` : ''}
-    ${alert.machine ? `AND machine_id IN (${alert.machine.join(',')})` : ''}
+    ${
+      alert.service
+        ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      alert.machine
+        ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
+        : ''
+    }
   `,
   request: (alert: any) => `
     SELECT COUNT(*) as value 
@@ -169,23 +193,49 @@ export const METRIC_QUERY = {
       SELECT COUNT(*) as total_requests 
       FROM request 
       WHERE time >= now() - interval '${alert.duration}'
-      ${alert.service ? `AND service IN (${alert.service.join(',')})` : ''}
-      ${alert.machine ? `AND machine_id IN (${alert.machine.join(',')})` : ''}
+      ${
+        alert.service
+          ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
+          : ''
+      }
+      ${
+        alert.machine
+          ? `AND machine_id IN (${alert.machine
+              .map((m) => `'${m}'`)
+              .join(',')})`
+          : ''
+      }
     ) sub
   `,
   response: (alert: any) => `
     SELECT ${alert.aggregation}(response_time) as value 
     FROM request 
     WHERE time >= now() - interval '${alert.duration}'
-    ${alert.service ? `AND service IN (${alert.service.join(',')})` : ''}
-    ${alert.machine ? `AND machine_id IN (${alert.machine.join(',')})` : ''}
+    ${
+      alert.service
+        ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      alert.machine
+        ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
+        : ''
+    }
   `,
   errorRate: (alert: any) => `
     SELECT (COUNT(CASE WHEN status_code >= 400 THEN 1 END) * 100.0 / COUNT(*)) as value 
     FROM request 
     WHERE time >= now() - interval '${alert.duration}'
-    ${alert.service ? `AND service IN (${alert.service.join(',')})` : ''}
-    ${alert.machine ? `AND machine_id IN (${alert.machine.join(',')})` : ''}
+    ${
+      alert.service
+        ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      alert.machine
+        ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
+        : ''
+    }
   `,
   error: (alert: any) => `
     SELECT ${alert.aggregation}(error_count) as value 
@@ -194,8 +244,18 @@ export const METRIC_QUERY = {
       FROM request 
       WHERE status_code >= 400 
       AND time >= now() - interval '${alert.duration}'
-      ${alert.service ? `AND service IN (${alert.service.join(',')})` : ''}
-      ${alert.machine ? `AND machine_id IN (${alert.machine.join(',')})` : ''}
+      ${
+        alert.service
+          ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
+          : ''
+      }
+      ${
+        alert.machine
+          ? `AND machine_id IN (${alert.machine
+              .map((m) => `'${m}'`)
+              .join(',')})`
+          : ''
+      }
     ) sub
   `,
 };
@@ -264,8 +324,8 @@ const testExpressions = [
 
 const testRules = [
   "AVG(CPU{services=[liberator-api],machines=[machine_03]}) > AVG(CPU, '1 days')",
-  // 'COUNT(error{services=[s1]}) > 1000',
-  // "MAX(response{machine=[mid_01,mid_02]}) > MAX(response, '7 days')",
+  'COUNT(error{services=[s1]}) > 0',
+  "MAX(response{machine=[mid_01,mid_02]}) > MAX(response, '3 days')",
 ];
 
 export const testExpressionParser = () => {
