@@ -13,8 +13,7 @@ CREATE TABLE alert_rule (
 
 CREATE TABLE alert_history (
     time            TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    rule_id         INTEGER REFERENCES alert_rule(id),
-    metric_value    DOUBLE PRECISION NOT NULL
+    rule_id         INTEGER REFERENCES alert_rule(id) ON DELETE CASCADE
 );
 
 SELECT create_hypertable('alert_history', 'time');

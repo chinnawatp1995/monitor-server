@@ -179,9 +179,11 @@ Content-Type: {{contentType}}
 
 {
     "name": "alert_cpu",
-    "expression": "AVG(CPU{services=[liberator-api],machines=[machine_03]}) > AVG(CPU, "1 days")",
-    "duration": "5 seconds",
-    "severity": "danger"
+    "expression": "AVG(CPU{services=[liberator-api],machines=[machine_03]}) > AVG(CPU, '10 day')",
+    "duration": "15 day",
+    "severity": "danger",
+    "message": "CPU usage is too high",
+    "silence_time": "1 day"
 }
 
 ###
@@ -203,6 +205,45 @@ POST {{baseUrl}}/add-recipient
 Content-Type: {{contentType}}
 
 {
-    "ruleId": "1",
-    "recipientIds": ["1", "2"]
+    "ruleId": "20",
+    "recipientId": ["2"]
 }
+
+
+###
+# @name get-alert-history
+GET {{baseUrl}}/alert-rules
+Content-Type: {{contentType}}
+
+{
+
+}
+
+
+###
+# @name get-recipients
+GET {{baseUrl}}/recipients
+Content-Type: {{contentType}}
+
+
+
+###
+# @name disable-rule
+GET {{baseUrl}}/disable-rule?ruleId=20
+Content-Type: {{contentType}}
+
+###
+# @name enable-rule
+GET {{baseUrl}}/enable-rule?ruleId=20
+Content-Type: {{contentType}}
+
+###
+# @name delete-rule
+GET {{baseUrl}}/delete-rule?ruleId=20
+Content-Type: {{contentType}}
+
+
+###
+# @name remove-recipient
+GET {{baseUrl}}/remove-recipient?ruleId=20&recipientId=1
+Content-Type: {{contentType}}

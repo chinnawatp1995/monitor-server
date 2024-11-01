@@ -20,6 +20,7 @@ import {
   getResponseTimePercentile,
   getTransferedNetworkQuery,
   serverTimeline,
+  updateAlertQuery,
 } from './utils/rawSql';
 import { fillMissingBuckets, testRuleParser } from './utils/util-functions';
 import { TFilterReq, TMetricsReq } from './utils/types/request.type';
@@ -397,18 +398,55 @@ export class AppService {
     return {};
   }
 
-  async addRecipientToAlert({ recipientIds, ruleId }) {
+  async addRecipientToAlert({ recipientId, ruleId }) {
     await this.pgClient.query({
-      text: addRecipientToAlertQuery(ruleId, recipientIds),
+      text: addRecipientToAlertQuery(ruleId, recipientId),
     });
   }
 
-  async getAlert(filter: TFilterReq) {
-    const { startTime, endTime, services, machineIds } = filter;
+  async getAlert() {
     return (
       await this.pgClient.query({
         text: getAlertQuery(),
       })
     ).rows;
+  }
+
+  async updateAlert(alert: any) {
+    await this.pgClient.query({
+      text: updateAlertQuery(alert),
+    });
+  }
+
+  async enableRule(ruleId: string) {
+    await this.pgClient.query({
+      text: `UPDATE alert_rule SET enabled = true WHERE id = ${ruleId}`,
+    });
+  }
+
+  async disableRule(ruleId: string) {
+    await this.pgClient.query({
+      text: `UPDATE alert_rule SET enabled = false WHERE id = ${ruleId}`,
+    });
+  }
+
+  async getRecipients() {
+    return (
+      await this.pgClient.query({
+        text: `SELECT * FROM recipient`,
+      })
+    ).rows;
+  }
+
+  async deleteRule(ruleId: string) {
+    await this.pgClient.query({
+      text: `DELETE FROM alert_rule WHERE id = ${ruleId}`,
+    });
+  }
+
+  async removeRecipientFromRule(ruleId: string, recipientId: string) {
+    await this.pgClient.query({
+      text: `DELETE FROM alert_recipient WHERE rule_id = ${ruleId} AND recipient_id = ${recipientId}`,
+    });
   }
 }

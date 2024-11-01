@@ -62,7 +62,7 @@ export class AlertManager {
       process.env.TELEGRAM_TOKEN ??
         '7731705891:AAEg9pvLFjTAlnUvzhhN2QpmgImIm14FUpM',
       process.env.TELEGRAM_CHAT_ID ?? '-4565250427',
-      `Alert: ${rule.name} - ${rule.service}`,
+      rule.message,
     );
   }
 

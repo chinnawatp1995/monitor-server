@@ -87,13 +87,14 @@ export class AppController {
     return await this.appService.serverTimeline(filter);
   }
 
-  @Post('alert-rules')
-  async getAlert(@Body() filter: TFilterReq) {
-    return await this.appService.getAlert(filter);
+  @Get('alert-rules')
+  async getAlert() {
+    return await this.appService.getAlert();
   }
 
   @Post('create-alert')
   async createAlert(@Body() alert: any) {
+    console.log(alert);
     return await this.appService.createAlert(alert);
   }
 
@@ -105,5 +106,43 @@ export class AppController {
   @Post('add-recipient')
   async addRecipientToAlert(@Body() body: any) {
     return await this.appService.addRecipientToAlert(body);
+  }
+
+  @Post('get-alert-history')
+  async getAlertHistory(@Body() body: any) {
+    debugger;
+  }
+
+  @Post('update-alert')
+  async updateAlert(@Body() body: any) {
+    return await this.appService.updateAlert(body);
+  }
+
+  @Get('recipients')
+  async getRecipients() {
+    return await this.appService.getRecipients();
+  }
+
+  @Get('enable-rule')
+  async enableRule(@Query('ruleId') ruleId: string) {
+    return await this.appService.enableRule(ruleId);
+  }
+
+  @Get('disable-rule')
+  async disableRule(@Query('ruleId') ruleId: string) {
+    return await this.appService.disableRule(ruleId);
+  }
+
+  @Get('delete-rule')
+  async deleteRule(@Query('ruleId') ruleId: string) {
+    return await this.appService.deleteRule(ruleId);
+  }
+
+  @Get('remove-recipient')
+  async removeRecipientFromRule(
+    @Query('ruleId') ruleId: string,
+    @Query('recipientId') recipientId: string,
+  ) {
+    return await this.appService.removeRecipientFromRule(ruleId, recipientId);
   }
 }

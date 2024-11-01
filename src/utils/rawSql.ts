@@ -276,10 +276,10 @@ export const serverTimeline = (
   `ORDER BY time, machine_id `;
 
 export const createAlertQuery = (alert: any) =>
-  `INSERT INTO alert_rule(name, expression, duration, severity, message) ` +
+  `INSERT INTO alert_rule(name, expression, duration, severity, silence_time, message) ` +
   `VALUES ('${alert.name}', E'${alert.expression.replace(/'/g, "\\'")}', '${
     alert.duration
-  }', '${alert.severity}', '${alert.message}')`;
+  }', '${alert.severity}', '${alert.silence_time}', '${alert.message}')`;
 
 export const createRecipientQuery = (recipient: any) =>
   `INSERT INTO recipient(app, token, url, room) ` +
@@ -297,3 +297,12 @@ export const addRecipientToAlertQuery = (
     .join(',')}`;
 
 export const getAlertQuery = () => `SELECT * FROM alert_rule`;
+
+export const updateAlertQuery = (alert: any) =>
+  `UPDATE alert_rule SET name = '${
+    alert.name
+  }', expression = E'${alert.expression.replace(/'/g, "\\'")}', duration = '${
+    alert.duration
+  }', severity = '${alert.severity}', silence_time = '${
+    alert.silence_time
+  }', message = '${alert.message}' WHERE id = ${alert.id}`;

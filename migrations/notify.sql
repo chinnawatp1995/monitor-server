@@ -7,7 +7,7 @@ CREATE TABLE recipient (
 );
 
 CREATE TABLE alert_recipient (
-    recipient_id INTEGER REFERENCES recipient(id),
-    rule_id INTEGER REFERENCES alert_rule(id),
+    recipient_id INTEGER REFERENCES recipient(id) ON DELETE CASCADE,
+    rule_id INTEGER REFERENCES alert_rule(id) ON DELETE CASCADE,
     PRIMARY KEY (recipient_id, rule_id)
 );
