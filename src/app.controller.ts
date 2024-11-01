@@ -119,8 +119,8 @@ export class AppController {
   }
 
   @Get('recipients')
-  async getRecipients() {
-    return await this.appService.getRecipients();
+  async getRecipients(@Query('ruleId') ruleId: string) {
+    return await this.appService.getRecipients(ruleId);
   }
 
   @Get('enable-rule')
@@ -138,11 +138,16 @@ export class AppController {
     return await this.appService.deleteRule(ruleId);
   }
 
-  @Get('remove-recipient')
+  @Get('remove-recipient-from-rule')
   async removeRecipientFromRule(
     @Query('ruleId') ruleId: string,
     @Query('recipientId') recipientId: string,
   ) {
     return await this.appService.removeRecipientFromRule(ruleId, recipientId);
+  }
+
+  @Get('delete-recipient')
+  async deleteRecipient(@Query('recipientId') recipientId: string) {
+    return await this.appService.removeRecipient(recipientId);
   }
 }

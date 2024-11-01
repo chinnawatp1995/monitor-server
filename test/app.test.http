@@ -223,7 +223,7 @@ Content-Type: {{contentType}}
 
 ###
 # @name get-recipients
-GET {{baseUrl}}/recipients
+GET {{baseUrl}}/recipients?ruleId=
 Content-Type: {{contentType}}
 
 

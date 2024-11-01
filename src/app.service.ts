@@ -398,9 +398,9 @@ export class AppService {
     return {};
   }
 
-  async addRecipientToAlert({ recipientId, ruleId }) {
+  async addRecipientToAlert(params: any) {
     await this.pgClient.query({
-      text: addRecipientToAlertQuery(ruleId, recipientId),
+      text: addRecipientToAlertQuery(params.ruleId, params.recipientId),
     });
   }
 
@@ -430,10 +430,14 @@ export class AppService {
     });
   }
 
-  async getRecipients() {
+  async getRecipients(ruleId: string) {
     return (
       await this.pgClient.query({
-        text: `SELECT * FROM recipient`,
+        text: `SELECT * FROM recipient ${
+          ruleId
+            ? `WHERE id IN (SELECT alert_recipient.recipient_id FROM alert_recipient WHERE alert_recipient.rule_id = ${ruleId})`
+            : ''
+        }`,
       })
     ).rows;
   }
@@ -447,6 +451,12 @@ export class AppService {
   async removeRecipientFromRule(ruleId: string, recipientId: string) {
     await this.pgClient.query({
       text: `DELETE FROM alert_recipient WHERE rule_id = ${ruleId} AND recipient_id = ${recipientId}`,
+    });
+  }
+
+  async removeRecipient(recipientId: string) {
+    await this.pgClient.query({
+      text: `DELETE FROM recipient WHERE id = ${recipientId}`,
     });
   }
 }

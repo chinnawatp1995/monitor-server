@@ -337,3 +337,7 @@ export const testRuleParser = async () => {
     console.log(`eval(${a})`, eval(a));
   }
 };
+
+export const templateStringFormat = (str: string, ...args: any[]) => {
+  return str.replace(/\$\{([\w+\d+]+)\}/g, (_, key) => args[key]);
+};
