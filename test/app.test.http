@@ -179,10 +179,10 @@ Content-Type: {{contentType}}
 
 {
     "name": "alert_cpu",
-    "expression": "AVG(CPU{services=[liberator-api],machines=[machine_03]}) > AVG(CPU, '10 day')",
-    "duration": "15 day",
+    "expression": "AVG(CPU{services=[liberator-api],machines=[machine_03]}) > AVG(CPU, '1 day')",
+    "duration": "1 day",
     "severity": "danger",
-    "message": "CPU usage is too high",
+    "message": "CPU usage of $services $machines is too high",
     "silence_time": "1 day"
 }
 
@@ -245,5 +245,5 @@ Content-Type: {{contentType}}
 
 ###
 # @name remove-recipient
-GET {{baseUrl}}/remove-recipient?ruleId=20&recipientId=1
+GET {{baseUrl}}/remove-recipient?ruleId=20&recipientId=2
 Content-Type: {{contentType}}

@@ -2,7 +2,7 @@ CREATE TABLE alert_rule (
     id              SERIAL PRIMARY KEY,
     name            TEXT NOT NULL,
     expression      TEXT NOT NULL,
-    duration        INTEGER NOT NULL,  -- How long condition must be true before alerting
+    duration        TEXT DEFAULT '1 day',  -- How long condition must be true before alerting
     severity        TEXT NOT NULL,  -- 'critical', 'warning', 'info'
     silence_time    TEXT DEFAULT '1 hour',
     enabled         BOOLEAN NOT NULL DEFAULT true,
