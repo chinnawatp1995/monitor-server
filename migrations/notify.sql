@@ -1,5 +1,6 @@
 CREATE TABLE recipient (
     id  SERIAL PRIMARY KEY,
+    name  TEXT NOT NULL,
     app TEXT NOT NULL,
     token   TEXT NOT NULL,
     url     TEXT NOT NULL,

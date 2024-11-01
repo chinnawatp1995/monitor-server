@@ -178,11 +178,11 @@ POST {{baseUrl}}/create-alert
 Content-Type: {{contentType}}
 
 {
-    "name": "alert_cpu",
-    "expression": "AVG(CPU{services=[liberator-api],machines=[machine_03]}) > AVG(CPU, '1 day')",
-    "duration": "1 day",
+    "name": "alert_mem",
+    "expression": "AVG(MEM{services=[liberator-api],machines=[machine_03]}) > AVG(MEM, '1 day')",
+    "duration": "15 day",
     "severity": "danger",
-    "message": "CPU usage of $services $machines is too high",
+    "message": "Memory usage of $services $machines is too high",
     "silence_time": "1 day"
 }
 
@@ -192,6 +192,7 @@ POST {{baseUrl}}/create-recipient
 Content-Type: {{contentType}}
 
 {
+    "name": "telegram_bot",
     "app": "telegram",
     "token": "7731705891:AAEg9pvLFjTAlnUvzhhN2QpmgImIm14FUpM",
     "url": "https://api.telegram.org/bot",
@@ -205,7 +206,7 @@ POST {{baseUrl}}/add-recipient
 Content-Type: {{contentType}}
 
 {
-    "ruleId": "20",
+    "ruleId": "1",
     "recipientId": ["2"]
 }
 
@@ -229,12 +230,12 @@ Content-Type: {{contentType}}
 
 ###
 # @name disable-rule
-GET {{baseUrl}}/disable-rule?ruleId=20
+GET {{baseUrl}}/disable-rule?ruleId=1
 Content-Type: {{contentType}}
 
 ###
 # @name enable-rule
-GET {{baseUrl}}/enable-rule?ruleId=20
+GET {{baseUrl}}/enable-rule?ruleId=1
 Content-Type: {{contentType}}
 
 ###
@@ -245,5 +246,5 @@ Content-Type: {{contentType}}
 
 ###
 # @name remove-recipient
-GET {{baseUrl}}/remove-recipient?ruleId=20&recipientId=2
+GET {{baseUrl}}/remove-recipient?ruleId=2&recipientId=1
 Content-Type: {{contentType}}

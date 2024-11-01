@@ -282,8 +282,8 @@ export const createAlertQuery = (alert: any) =>
   }', '${alert.severity}', '${alert.silence_time}', '${alert.message}')`;
 
 export const createRecipientQuery = (recipient: any) =>
-  `INSERT INTO recipient(app, token, url, room) ` +
-  `VALUES ('${recipient.app}', '${recipient.token}', '${recipient.url}', '${recipient.room}')`;
+  `INSERT INTO recipient(name, app, token, url, room) ` +
+  `VALUES ('${recipient.name}', '${recipient.app}', '${recipient.token}', '${recipient.url}', '${recipient.room}')`;
 
 export const getAlertRecipientsQuery = (ruleId: string) =>
   `SELECT * FROM alert_recipient WHERE rule_id = ${ruleId}`;
