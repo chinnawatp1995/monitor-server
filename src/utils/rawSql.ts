@@ -3,7 +3,7 @@ export const createRequestQuery = (recs: any): string =>
   `VALUES ${recs.values
     .map(
       (rec) =>
-        `('${rec.time}','${recs.tags[0]}', '${recs.tags[1]}', '${rec.method}', '${rec.path}', ${rec.statusCode}, ${rec.responseTime}, '${rec.errorMessage}', '${rec.controller}')`,
+        `('${rec.time}','${recs.tags[0]}', '${recs.tags[1]}', '${rec.method}', '${rec.path}', ${rec.statusCode}, ${rec.responseTime}, '${rec.errorMessage}', '${recs.tags[2]}')`,
     )
     .join(',')}`;
 

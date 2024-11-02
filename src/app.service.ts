@@ -65,19 +65,19 @@ export class AppService {
         const requestValue = {
           tags: metrics.tags,
           values: Object.entries(request ?? {}).flatMap(([k, v]) => {
+            const [path, statusCode] = k.split(':');
             return (v as any).map((r) => {
               return {
                 time: new Date(r[0]).toISOString(),
-                statusCode: r[1],
-                responseTime: r[2],
-                errorMessage: r[3],
-                controller: r[4],
-                path: k,
+                responseTime: r[1],
+                errorMessage: r[2],
+                path,
+                statusCode,
               };
             });
           }),
         };
-
+        console.log(createRequestQuery(requestValue));
         await this.pgClient.query({ text: createRequestQuery(requestValue) });
       }
       if (Object.values(cpu ?? {}).length > 0) {
