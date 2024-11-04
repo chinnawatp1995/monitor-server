@@ -25,13 +25,14 @@ import {
 import { fillMissingBuckets, testRuleParser } from './utils/util-functions';
 import { TFilterReq, TMetricsReq } from './utils/types/request.type';
 import { AlertManager } from './utils/alert/AlertManager';
+import { TAlertRuleQuery, TRecipientQuery } from './utils/types/record.type';
 
 export const TRACK_STATUS = new Map<string, boolean[]>();
 export let pgClient: any;
 
 @Injectable()
 export class AppService {
-  private pgClient: any;
+  private pgClient: Pool;
   // constructor() {}
 
   async onModuleInit() {
@@ -92,8 +93,6 @@ export class AppService {
             });
           }),
         };
-        // console.log(cpuValue);
-        // console.log(createCpuQuery(cpuValue));
         await this.pgClient.query({ text: createCpuQuery(cpuValue) });
       }
       if (Object.values(mem ?? {}).length > 0) {
@@ -367,7 +366,7 @@ export class AppService {
     ).rows;
   }
 
-  async serverTimeline(filterObj: any) {
+  async serverTimeline(filterObj: TFilterReq) {
     const { startTime, endTime, services, machineIds } = filterObj;
     const records = (
       await this.pgClient.query({
@@ -378,7 +377,7 @@ export class AppService {
     // return records;
   }
 
-  async createAlert(alert: any) {
+  async createAlert(alert: TAlertRuleQuery) {
     try {
       await this.pgClient.query({
         text: createAlertQuery(alert),
@@ -391,16 +390,19 @@ export class AppService {
     };
   }
 
-  async createRecipient(recipient: any) {
+  async createRecipient(recipient: TRecipientQuery) {
     await this.pgClient.query({
       text: createRecipientQuery(recipient),
     });
     return {};
   }
 
-  async addRecipientToAlert(params: any) {
+  async addRecipientToAlert(params: {
+    ruleId: string;
+    recipientIds: string[];
+  }) {
     await this.pgClient.query({
-      text: addRecipientToAlertQuery(params.ruleId, params.recipientId),
+      text: addRecipientToAlertQuery(params.ruleId, params.recipientIds),
     });
   }
 
@@ -412,7 +414,7 @@ export class AppService {
     ).rows;
   }
 
-  async updateAlert(alert: any) {
+  async updateAlert(alert: TAlertRuleQuery) {
     await this.pgClient.query({
       text: updateAlertQuery(alert),
     });

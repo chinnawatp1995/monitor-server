@@ -3,10 +3,11 @@ import { delegateTerm, METRIC_QUERY } from '../util-functions';
 
 export class AlertEvaluator {
   private validTerm =
-    /(AVG|SUM|COUNT|MIN|MAX)\((cpu|mem|request|response|error|error_rate|rx_net|tx_net)(\{[^}]*\})*(,.*'(\d+ (minute|hour|day|week|month|year)s*)')*\)/gi;
+    /(AVG|SUM|COUNT|MIN|MAX)\((cpu|mem|request|response|error|error_rate|rx_net|tx_net|server_down)(\{[^}]*\})*(,.*'(\d+ (minute|hour|day|week|month|year)s*)')*\)/gi;
   private ruleTermRegex = {
     aggregation: /AVG|SUM|COUNT|MIN|MAX/i,
-    metrics: /cpu|mem|request|response|error|error_rate|rx_net|tx_net/i,
+    metrics:
+      /cpu|mem|request|response|error|error_rate|rx_net|tx_net|server_down/i,
     paramRegex: /{.*}/,
     service: /services=\[([\w,\-]+)\]/i,
     machine: /machines=\[([\w,\-]+)\]/i,

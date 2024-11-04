@@ -1,13 +1,24 @@
-export const createRequestQuery = (recs: any): string =>
-  `INSERT INTO request(time, service, machine_id, method, path, status_code, response_time, error_message, controller) ` +
+import {
+  TAlertRuleQuery,
+  TCpuValue,
+  TCreateQuery,
+  TCreateServerStatus,
+  TMemValue,
+  TNetworkValue,
+  TRecipientQuery,
+  TRequestValue,
+} from './types/record.type';
+
+export const createRequestQuery = (recs: TCreateQuery<TRequestValue>): string =>
+  `INSERT INTO request(time, service, machine_id, path, status_code, response_time, error_message, controller) ` +
   `VALUES ${recs.values
     .map(
       (rec) =>
-        `('${rec.time}','${recs.tags[0]}', '${recs.tags[1]}', '${rec.method}', '${rec.path}', ${rec.statusCode}, ${rec.responseTime}, '${rec.errorMessage}', '${recs.tags[2]}')`,
+        `('${rec.time}','${recs.tags[0]}', '${recs.tags[1]}', '${rec.path}', ${rec.statusCode}, ${rec.responseTime}, '${rec.errorMessage}', '${recs.tags[2]}')`,
     )
     .join(',')}`;
 
-export const createCpuQuery = (recs: any): string =>
+export const createCpuQuery = (recs: TCreateQuery<TCpuValue>): string =>
   `INSERT INTO cpu_usage(time, service, machine_id, value) ` +
   `VALUES ${recs.values
     .map(
@@ -16,7 +27,7 @@ export const createCpuQuery = (recs: any): string =>
     )
     .join(',')}`;
 
-export const createMemQuery = (recs: any): string =>
+export const createMemQuery = (recs: TCreateQuery<TMemValue>): string =>
   `INSERT INTO mem_usage(time, service, machine_id, value) ` +
   `VALUES ${recs.values
     .map(
@@ -25,7 +36,7 @@ export const createMemQuery = (recs: any): string =>
     )
     .join(',')}`;
 
-export const createNetworkQuery = (recs: any): string =>
+export const createNetworkQuery = (recs: TCreateQuery<TNetworkValue>): string =>
   `INSERT INTO network_usage(time, service, machine_id, rx_sec, tx_sec) ` +
   `VALUES ${recs.values
     .map(
@@ -34,7 +45,7 @@ export const createNetworkQuery = (recs: any): string =>
     )
     .join(',')}`;
 
-export const createServerStatus = (recs: any): string =>
+export const createServerStatus = (recs: TCreateServerStatus[]): string =>
   `INSERT INTO server_status(machine_id, status, service) ` +
   `VALUES ${recs
     .map((v) => `('${v.machineId}', ${v.status}, '${v.service}' )`)
@@ -275,13 +286,13 @@ export const serverTimeline = (
   `GROUP BY time, machine_id, status ` +
   `ORDER BY time, machine_id `;
 
-export const createAlertQuery = (alert: any) =>
+export const createAlertQuery = (alert: TAlertRuleQuery) =>
   `INSERT INTO alert_rule(name, expression, duration, severity, silence_time, message) ` +
   `VALUES ('${alert.name}', E'${alert.expression.replace(/'/g, "\\'")}', '${
     alert.duration
   }', '${alert.severity}', '${alert.silence_time}', '${alert.message}')`;
 
-export const createRecipientQuery = (recipient: any) =>
+export const createRecipientQuery = (recipient: TRecipientQuery) =>
   `INSERT INTO recipient(name, app, token, url, room) ` +
   `VALUES ('${recipient.name}', '${recipient.app}', '${recipient.token}', '${recipient.url}', '${recipient.room}')`;
 
@@ -298,7 +309,7 @@ export const addRecipientToAlertQuery = (
 
 export const getAlertQuery = () => `SELECT * FROM alert_rule`;
 
-export const updateAlertQuery = (alert: any) =>
+export const updateAlertQuery = (alert: TAlertRuleQuery) =>
   `UPDATE alert_rule SET name = '${
     alert.name
   }', expression = E'${alert.expression.replace(/'/g, "\\'")}', duration = '${

@@ -207,7 +207,7 @@ Content-Type: {{contentType}}
 
 {
     "ruleId": "1",
-    "recipientId": ["2"]
+    "recipientIds": ["2"]
 }
 
 

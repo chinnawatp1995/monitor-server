@@ -153,7 +153,7 @@ export const METRIC_QUERY = {
         : ''
     }
   `,
-  rxNetwork: (alert: any) => `
+  rx_network: (alert: any) => `
     SELECT ${alert.aggregation}(rx_sec) as value 
     FROM network_usage 
     WHERE time >= now() - interval '${alert.duration}'
@@ -168,7 +168,7 @@ export const METRIC_QUERY = {
         : ''
     }
   `,
-  txNetwork: (alert: any) => `
+  tx_network: (alert: any) => `
     SELECT ${alert.aggregation}(tx_sec) as value 
     FROM network_usage 
     WHERE time >= now() - interval '${alert.duration}'
@@ -218,7 +218,7 @@ export const METRIC_QUERY = {
         : ''
     }
   `,
-  errorRate: (alert: any) => `
+  error_rate: (alert: any) => `
     SELECT (COUNT(CASE WHEN status_code >= 400 THEN 1 END) * 100.0 / COUNT(*)) as value 
     FROM request 
     WHERE time >= now() - interval '${alert.duration}'
@@ -254,6 +254,22 @@ export const METRIC_QUERY = {
       }
     )
   `,
+  server_status: (alert: any) =>
+    `SELECT COUNT(*)
+     FROM server_status
+     WHERE status = FALSE
+     AND time >= now() - interval ${alert.duration} 
+     ${
+       alert.service
+         ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
+         : ''
+     }
+    ${
+      alert.machine
+        ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
+        : ''
+    }
+     ;`,
 };
 
 const getDataFromRule = async (
