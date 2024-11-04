@@ -3,7 +3,7 @@ import { delegateTerm, METRIC_QUERY } from '../util-functions';
 
 export class AlertEvaluator {
   private validTerm =
-    /(AVG|SUM|COUNT|MIN|MAX)\((cpu|mem|request|response|error|error_rate|rx_net|tx_net|server_down)(\{[^}]*\})*(,.*'(\d+ (minute|hour|day|week|month|year)s*)')*\)/gi;
+    /(AVG|SUM|COUNT|MIN|MAX)\((cpu|mem|request|response|error|error_rate|rx_net|tx_net|server_down)(\{[^}]*\})*(,.*'(\d+ (second|minute|hour|day|week|month|year)s*)')*\)/gi;
   private ruleTermRegex = {
     aggregation: /AVG|SUM|COUNT|MIN|MAX/i,
     metrics:
@@ -11,12 +11,12 @@ export class AlertEvaluator {
     paramRegex: /{.*}/,
     service: /services=\[([\w,\-]+)\]/i,
     machine: /machines=\[([\w,\-]+)\]/i,
-    time: /['"](\d+ (minute|hour|day|week|month|year)s*)["']/,
+    time: /['"](\d+ (second|minute|hour|day|week|month|year)s*)["']/,
   };
   private METRIC_QUERY = METRIC_QUERY;
 
   async evaluateRule(rule: any) {
-    const delegatedRule = await delegateTerm(rule);
+    const delegatedRule = await this.delegateTerm(rule);
     const result = eval(delegatedRule);
     return {
       isTriggered: result,

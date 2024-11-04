@@ -254,11 +254,11 @@ export const METRIC_QUERY = {
       }
     )
   `,
-  server_status: (alert: any) =>
-    `SELECT COUNT(*)
+  server_down: (alert: any) =>
+    `SELECT COUNT(*) as value
      FROM server_status
      WHERE status = FALSE
-     AND time >= now() - interval ${alert.duration} 
+     AND time >= now() - interval '${alert.duration}' 
      ${
        alert.service
          ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
