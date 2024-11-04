@@ -30,7 +30,7 @@ CREATE TABLE response_time (
     bucket_1600 BIGINT NOT NULL DEFAULT 0,  
     bucket_3200 BIGINT NOT NULL DEFAULT 0, 
     bucket_6400 BIGINT NOT NULL DEFAULT 0,
-    bucket_12800 BIGINT NOT NULL DEFAULT 0,  
+    bucket_12800 BIGINT NOT NULL DEFAULT 0
 );
 
 SELECT create_hypertable('response_time', 'time');
@@ -45,8 +45,7 @@ CREATE TABLE error (
     path TEXT NOT NULL,    
     statusCode INTEGER NOT NULL,   
     reason TEXT,
-    value BIGINT NOT NULL,
-
+    value BIGINT NOT NULL
 )
 
 SELECT create_hypertable('error', 'time');
