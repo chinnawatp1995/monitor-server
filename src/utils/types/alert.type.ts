@@ -1,23 +1,15 @@
-interface AlertRule {
+export interface AlertRule {
+  id: string | number;
   name: string;
-  service: string;
-  machine_id?: string; // Optional since it can be null in the schema
-  metric_type:
-    | 'cpu'
-    | 'memory'
-    | 'request_rate'
-    | 'error_rate'
-    | 'response_time';
-  aggregation: 'avg' | 'count' | 'sum' | 'min' | 'max' | 'none';
-  condition: '>' | '<' | '>=' | '<=';
-  threshold: number;
-  duration: string; // e.g., '5 minutes', '1 hour'
-  severity: 'critical' | 'warning' | 'info';
+  expression: string;
+  duration: string;
+  severity: 1 | 2 | 3 | 4 | 5;
   enabled?: boolean; // Optional since it has a default value
   silence_time: string;
+  message: string;
 }
 
-interface MetricData {
+export interface MetricData {
   service: string;
   machine_id?: string;
   metric_type: string;
@@ -25,7 +17,7 @@ interface MetricData {
   timestamp: Date;
 }
 
-interface AlertNotifier {
+export interface AlertNotifier {
   notify(alert: {
     severity: string;
     message: string;

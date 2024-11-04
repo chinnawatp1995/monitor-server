@@ -30,7 +30,6 @@ export class AlertManager {
   }
 
   private async createAlert(rule: any) {
-    // Check if there's already an active alert for this rule
     const existingAlert: any = EXISTING_ALERT_RULE.find(
       (id) => id === (rule as any).id,
     );
@@ -66,13 +65,13 @@ export class AlertManager {
     );
   }
 
-  async saveAlert(ruleId: any) {
+  async saveAlert(ruleId: string | number) {
     await pgClient.query({
       text: `INSERT INTO alert_history(rule_id) VALUES ('${ruleId}')`,
     });
   }
 
-  async getAlertHistory(ruleId: any, duration: string) {
+  async getAlertHistory(ruleId: string | number, duration: string) {
     const alerts = await pgClient.query({
       text: `SELECT * FROM alert_history WHERE rule_id = '${ruleId}' AND time >= now() - interval '${duration}'`,
     });

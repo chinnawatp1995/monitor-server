@@ -1,5 +1,6 @@
 import { pgClient } from 'src/app.service';
-import { delegateTerm, METRIC_QUERY } from '../util-functions';
+import { METRIC_QUERY } from '../util-functions';
+import { AlertRule } from '../types/alert.type';
 
 export class AlertEvaluator {
   private validTerm =
@@ -15,7 +16,7 @@ export class AlertEvaluator {
   };
   private METRIC_QUERY = METRIC_QUERY;
 
-  async evaluateRule(rule: any) {
+  async evaluateRule(rule: AlertRule) {
     const delegatedRule = await this.delegateTerm(rule);
     const result = eval(delegatedRule);
     return {
@@ -42,12 +43,11 @@ export class AlertEvaluator {
     );
   }
 
-  delegateTerm = async (rule: any) => {
+  delegateTerm = async (rule: AlertRule) => {
     const matchString = rule.expression.match(this.validTerm);
     let delegatedExpression = rule.expression;
     for (const expression of matchString) {
       const delegatedTerm = await this.delegate(expression, rule.duration);
-      // console.log(delegatedExp);
       delegatedExpression = delegatedExpression.replace(
         expression,
         delegatedTerm,

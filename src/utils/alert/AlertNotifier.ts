@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { AlertNotifier } from '../types/alert.type';
 
 export class AlertNotificationService implements AlertNotifier {
   async notify(alert: { severity: string; message: string; details: any }) {
@@ -15,11 +16,7 @@ export class AlertNotificationService implements AlertNotifier {
     // }
   }
 
-  sendEmail(alert: { severity: string; message: string; details: any }): any {
-    throw new Error('Method not implemented.');
-  }
-
-  async getRecepient(rule: any) {
+  async getRecepient(ruleId: number | string) {
     debugger;
   }
 
