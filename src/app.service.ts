@@ -259,7 +259,7 @@ export class AppService {
   async getService() {
     return (
       await this.pgClient.query({
-        text: `SELECT DISTINCT ON (service) service FROM cpu_usage;`,
+        text: `SELECT DISTINCT ON (service) service FROM cpu;`,
       })
     ).rows.map((r) => r.service);
   }
@@ -267,9 +267,9 @@ export class AppService {
   async getMachineByService(service: string) {
     return (
       await this.pgClient.query({
-        text: `SELECT DISTINCT ON (machine_id) machine_id FROM cpu_usage WHERE service = '${service}';`,
+        text: `SELECT DISTINCT ON (machine) machine FROM cpu WHERE service = '${service}';`,
       })
-    ).rows.map((r) => r.machine_id);
+    ).rows.map((r) => r.machine);
   }
 
   async getMachineInfo(machineId: string) {
