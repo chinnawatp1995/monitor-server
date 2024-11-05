@@ -31,7 +31,12 @@ export const createErrorQuery = (recs, time) => {
   const values = recs
     .map(
       (rec) =>
-        `('${time}', '${rec.service}', '${rec.machine}', '${rec.controller}', '${rec.path}', ${rec.statusCode}, '${rec.reason}', ${rec.value})`,
+        `('${time}', '${rec.service}', '${rec.machine}', '${
+          rec.controller
+        }', '${rec.path}', ${rec.statusCode}, E'${rec.reason.replace(
+          /'/g,
+          "\\'",
+        )}', ${rec.value})`,
     )
     .join(',');
   return `${query}${values};`;

@@ -87,7 +87,6 @@ export class AppService {
         };
       });
 
-      console.log(createRequestQuery(recs, new Date(time).toISOString()));
       await this.pgClient.query({
         text: createRequestQuery(recs, new Date(time).toISOString()),
       });
@@ -117,7 +116,6 @@ export class AppService {
           bucket_12800: bucketValues['12800'],
         };
       });
-      console.log(createResponseQuery(recs, new Date(time).toISOString()));
       await this.pgClient.query({
         text: createResponseQuery(recs, new Date(time).toISOString()),
       });
