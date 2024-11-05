@@ -4,6 +4,8 @@
 --     machine  TEXT NOT NULL,
 -- )
 
+--  Old Schema 
+
 CREATE TABLE  request (
     id              SERIAL, 
     time            TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
