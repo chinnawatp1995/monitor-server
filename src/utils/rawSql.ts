@@ -90,7 +90,7 @@ export const createServerStatus = (recs: TCreateServerStatus[]): string =>
 
 /* ----------------------------------------------------------------------------------------------- */
 
-export const getRequestQuery = (
+export const getTotalRequest = (
   start: string,
   end: string,
   timeBucket: string,
@@ -98,135 +98,325 @@ export const getRequestQuery = (
   machineIds?: string[],
   controllers?: string[],
 ) =>
-  `SELECT time_bucket('${timeBucket}', time) AS bucket, COUNT(*) AS total_requests, machine_id, service ` +
-  `FROM request ` +
-  `WHERE time BETWEEN '${start}' AND '${end}' ` +
-  ((services ?? []).length > 0
-    ? `AND service IN (${services.map((s) => `'${s}'`).join(',')}) `
-    : ``) +
-  ((machineIds ?? []).length > 0
-    ? `AND machine_id IN (${machineIds.map((m) => `'${m}'`).join(',')}) `
-    : ``) +
-  ((controllers ?? []).length > 0
-    ? `AND machine_id IN (${controllers.map((m) => `'${m}'`).join(',')}) `
-    : ``) +
-  `GROUP BY bucket, machine_id, service ` +
-  `ORDER BY bucket;`;
-
-export const getResponseAvgQuery = (
-  start: string,
-  end: string,
-  timeBucket: string,
-  services?: string[],
-  machineIds?: string[],
-  controllers?: string[],
-) =>
-  `SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(response_time) AS avg, machine_id, service ` +
-  `FROM request ` +
-  `WHERE time BETWEEN '${start}' AND '${end}' ` +
-  ((services ?? []).length > 0
-    ? `AND service IN (${services.map((s) => `'${s}'`).join(',')}) `
-    : ``) +
-  ((machineIds ?? []).length > 0
-    ? `AND machine_id IN (${machineIds.map((m) => `'${m}'`).join(',')}) `
-    : ``) +
-  ((controllers ?? []).length > 0
-    ? `AND machine_id IN (${controllers.map((m) => `'${m}'`).join(',')}) `
-    : ``) +
-  `GROUP BY bucket, machine_id, service ` +
-  `ORDER BY bucket;`;
-
-export const getResponseDistQuery = (
-  start: string,
-  end: string,
-  resolution: string,
-  services?: string[],
-  controllers?: string[],
-) =>
-  `SELECT time_bucket('${resolution}', time) AS bucket, machine_id, ` +
-  `percentile_cont(0.1) WITHIN GROUP (ORDER BY response_time) AS p10, ` +
-  `percentile_cont(0.2) WITHIN GROUP (ORDER BY response_time) AS p20, ` +
-  `percentile_cont(0.3) WITHIN GROUP (ORDER BY response_time) AS p30, ` +
-  `percentile_cont(0.4) WITHIN GROUP (ORDER BY response_time) AS p40, ` +
-  `percentile_cont(0.5) WITHIN GROUP (ORDER BY response_time) AS p50, ` +
-  `percentile_cont(0.6) WITHIN GROUP (ORDER BY response_time) AS p60, ` +
-  `percentile_cont(0.7) WITHIN GROUP (ORDER BY response_time) AS p70, ` +
-  `percentile_cont(0.8) WITHIN GROUP (ORDER BY response_time) AS p80, ` +
-  `percentile_cont(0.9) WITHIN GROUP (ORDER BY response_time) AS p90 ` +
-  `FROM request ` +
-  `WHERE time BETWEEN '${start}' AND '${end}' ` +
-  ((services ?? []).length > 0
-    ? `AND service IN (${services.map((s) => `'${s}'`).join(',')}) `
-    : ``) +
-  ((controllers ?? []).length > 0
-    ? `AND machine_id IN (${controllers.map((m) => `'${m}'`).join(',')}) `
-    : ``) +
-  `GROUP BY bucket, machine_id ` +
-  `ORDER BY bucket, machine_id;`;
-
-export const getCpuQuery = (
-  start: string,
-  end: string,
-  timeBucket: string,
-  machineIds?: string[],
-) =>
-  `SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS avg, machine_id ` +
-  `FROM cpu_usage ` +
-  `WHERE time BETWEEN '${start}' AND '${end}' ` +
-  (machineIds ?? [].length > 0
-    ? ` AND machine_id IN  (${machineIds.map((m) => `'${m}'`).join(',')})`
-    : ``) +
-  `GROUP BY bucket, machine_id ` +
-  `ORDER BY bucket, machine_id;
+  `
+WITH request_deltas AS (
+    SELECT
+        time,
+        path,
+        service,
+        machine,
+        controller,
+        CASE
+            WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
+            THEN value  
+            ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
+        END AS requests_in_interval
+    FROM
+        request_count
+    WHERE time >= '${start}' AND time <= '${end}'
+    ${
+      (services ?? []).length > 0
+        ? `AND service IN  ( ${services.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      (machineIds ?? []).length > 0
+        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      (controllers ?? []).length > 0
+        ? `AND service IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+)
+SELECT 
+    time_bucket('${timeBucket}', time) AS bucket,
+    SUM(requests_in_interval) AS requests_per_hour,
+    machine,
+    controller,
+    service
+FROM 
+    request_deltas
+GROUP BY 
+    bucket, machine, service, controller
+ORDER BY 
+    bucket;
 `;
 
-export const getMemQuery = (
+export const getRequestPath = (
   start: string,
   end: string,
   timeBucket: string,
+  services?: string[],
   machineIds?: string[],
+  controllers?: string[],
 ) =>
-  `SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS avg , machine_id ` +
-  `FROM mem_usage ` +
-  `WHERE time BETWEEN '${start}' AND '${end}' ` +
-  ((machineIds ?? []).length
-    ? ` AND machine_id IN  (${machineIds.map((m) => `'${m}'`).join(',')})`
-    : ``) +
-  `GROUP BY bucket, machine_id ` +
-  `ORDER BY bucket, machine_id;
+  `
+WITH request_deltas AS (
+    SELECT
+        time,
+        path,
+        service,
+        machine,
+        controller,
+        CASE
+            WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
+            THEN value  
+            ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
+        END AS requests_in_interval
+    FROM
+        request_count
+    WHERE time >= '${start}' AND time <= '${end}'
+    ${
+      (services ?? []).length > 0
+        ? `AND service IN  ( ${services.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      (machineIds ?? []).length > 0
+        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      (controllers ?? []).length > 0
+        ? `AND service IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+)
+SELECT 
+    time_bucket('${timeBucket}', time) AS bucket,
+    SUM(requests_in_interval) AS requests_per_hour,
+    machine,
+    controller,
+    service
+FROM 
+    request_deltas
+GROUP BY 
+    bucket, machine, service, controller
+ORDER BY 
+    bucket;
 `;
 
-export const getReceivedNetworkQuery = (
+export const errorRate = (
   start: string,
   end: string,
   timeBucket: string,
-  machineIds: string[],
+  services?: string[],
+  machineIds?: string[],
+  controllers?: string[],
 ) =>
-  `SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(rx_sec) AS avg , machine_id ` +
-  `FROM network_usage ` +
-  `WHERE time BETWEEN '${start}' AND '${end}' ` +
-  ((machineIds ?? []).length
-    ? ` AND machine_id IN  (${machineIds.map((m) => `'${m}'`).join(',')})`
-    : ``) +
-  `GROUP BY bucket, machine_id ` +
-  `ORDER BY bucket, machine_id;
+  `
+WITH error_deltas AS (
+    SELECT
+        time,
+        path,
+        service,
+        machine,
+        controller,
+        reason,
+        CASE
+            WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
+            THEN value  
+            ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
+        END AS errors_in_interval
+    FROM
+        error
+    WHERE time >= '${start}' AND time <= '${end}'
+    ${
+      (services ?? []).length > 0
+        ? `AND service IN  ( ${services.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      (machineIds ?? []).length > 0
+        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      (controllers ?? []).length > 0
+        ? `AND service IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+)
+SELECT 
+    time_bucket('${timeBucket}', time) AS bucket,
+    SUM(errors_in_interval) AS error_per_hour,
+    machine,
+    controller,
+    service,
+    reason
+FROM 
+    error_deltas
+GROUP BY 
+    bucket, machine, service, controller, reason
+ORDER BY 
+    bucket;
   `;
 
-export const getTransferedNetworkQuery = (
+export const errorRanking = (
   start: string,
   end: string,
   timeBucket: string,
-  machineIds: string[],
+  services?: string[],
+  machineIds?: string[],
+  controllers?: string[],
 ) =>
-  `SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(tx_sec) AS avg , machine_id ` +
-  `FROM network_usage ` +
-  `WHERE time BETWEEN '${start}' AND '${end}' ` +
-  ((machineIds ?? []).length
-    ? ` AND machine_id IN  (${machineIds.map((m) => `'${m}'`).join(',')})`
-    : ``) +
-  `GROUP BY bucket, machine_id ` +
-  `ORDER BY bucket, machine_id;
-    `;
+  `
+WITH error_deltas AS (
+    SELECT
+        time,
+        path,
+        service,
+        machine,
+        controller,
+        reason,
+        CASE
+            WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
+            THEN value  
+            ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
+        END AS errors_in_interval
+    FROM
+        error
+    WHERE time >= '${start}' AND time <= '${end}'
+    ${
+      (services ?? []).length > 0
+        ? `AND service IN  ( ${services.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      (machineIds ?? []).length > 0
+        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      (controllers ?? []).length > 0
+        ? `AND service IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+)
+SELECT 
+    time_bucket('${timeBucket}', time) AS bucket,
+    SUM(errors_in_interval) AS error_per_hour,
+    machine,
+    controller,
+    service,
+    reason
+FROM 
+    error_deltas
+GROUP BY 
+    bucket, machine, service, controller, reason
+ORDER BY 
+    bucket;
+  `;
+
+export const getAverageResponseTime = (
+  start: string,
+  end: string,
+  timeBucket: string,
+  services?: string[],
+  machineIds?: string[],
+  controllers?: string[],
+) => `
+SELECT 
+    time_bucket('${timeBucket}', time) AS bucket,
+    AVG(sum/count) AS avg_response_time,
+    machine,
+    controller,
+    service
+FROM 
+    response_time
+WHERE time BETWEEN '${start}' AND '${end}'
+ ${
+   (services ?? []).length > 0
+     ? `AND service IN  ( ${services.map((s) => `'${s}'`).join(',')})`
+     : ''
+ }
+    ${
+      (machineIds ?? []).length > 0
+        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      (controllers ?? []).length > 0
+        ? `AND service IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+GROUP BY bucket, machine, service, controller
+ORDER BY bucket;
+`;
+
+export const cpuQuery = (
+  start: string,
+  end: string,
+  timeBucket: string,
+  machineIds?: string[],
+) => `
+SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS avg_cpu, machine, service
+FROM cpu
+WHERE time BETWEEN '${start}' AND '${end}'
+    ${
+      (machineIds ?? []).length > 0
+        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+GROUP BY bucket, machine, service
+ORDER BY bucket;
+`;
+
+export const memQuery = (
+  start: string,
+  end: string,
+  timeBucket: string,
+  machineIds?: string[],
+) => `
+SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS avg_mem, machine, service
+FROM mem
+WHERE time BETWEEN '${start}' AND '${end}'
+    ${
+      (machineIds ?? []).length > 0
+        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+GROUP BY bucket, machine, service
+ORDER BY bucket;
+`;
+
+export const rxNetworkQuery = (
+  start: string,
+  end: string,
+  timeBucket: string,
+  machineIds?: string[],
+) => `
+SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS avg_rx_network, machine, service
+FROM rx_network
+WHERE time BETWEEN '${start}' AND '${end}' 
+    ${
+      (machineIds ?? []).length > 0
+        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+GROUP BY bucket, machine, service
+ORDER BY bucket;
+`;
+
+export const txNetworkQuery = (
+  start: string,
+  end: string,
+  timeBucket: string,
+  machineIds?: string[],
+) => `
+SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS avg_tx_network, machine, service
+FROM tx_network
+WHERE time BETWEEN '${start}' AND '${end}'
+    ${
+      (machineIds ?? []).length > 0
+        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+GROUP BY bucket, machine, service
+ORDER BY bucket;
+`;
 
 export const getCurrentServerStatusQuery = (machineIds?: string[]) =>
   `SELECT DISTINCT ON (machine_id) machine_id, status, time ` +
@@ -235,79 +425,6 @@ export const getCurrentServerStatusQuery = (machineIds?: string[]) =>
     ? `WHERE machine_id IN (${machineIds.map((m) => `'${m}'`).join(',')}) `
     : ``) +
   `ORDER BY machine_id, time DESC;`;
-
-export const getResponseTimePercentile = (
-  start: string,
-  end: string,
-  resolution: string,
-  services?: string[],
-  controllers?: string[],
-) =>
-  `
-WITH percentile_data AS (
-    SELECT 
-        time_bucket('${resolution}', time) AS bucket, machine_id,
-        percentile_cont(0.0) WITHIN GROUP (ORDER BY response_time) AS p00,
-        percentile_cont(0.1) WITHIN GROUP (ORDER BY response_time) AS p10,
-        percentile_cont(0.2) WITHIN GROUP (ORDER BY response_time) AS p20,
-		    percentile_cont(0.3) WITHIN GROUP (ORDER BY response_time) AS p30,
-        percentile_cont(0.4) WITHIN GROUP (ORDER BY response_time) AS p40,
-        percentile_cont(0.5) WITHIN GROUP (ORDER BY response_time) AS p50,
-		    percentile_cont(0.6) WITHIN GROUP (ORDER BY response_time) AS p60,
-        percentile_cont(0.7) WITHIN GROUP (ORDER BY response_time) AS p70,
-        percentile_cont(0.8) WITHIN GROUP (ORDER BY response_time) AS p80,
-        percentile_cont(0.9) WITHIN GROUP (ORDER BY response_time) AS p90
-    FROM request
-    WHERE time BETWEEN '${start}' AND '${end}' ${
-    (services ?? []).length > 0
-      ? `AND service IN (${services.map((s) => `'${s}'`).join(',')}) `
-      : ``
-  }
-  ${
-    (controllers ?? []).length > 0
-      ? `AND machine_id IN (${controllers.map((m) => `'${m}'`).join(',')}) `
-      : ``
-  }
-    GROUP BY bucket, machine_id
-    ORDER BY bucket, machine_id
-)
-SELECT 
-    pd.bucket, pd.machine_id,
-    pd.p00,
-    pd.p10,
-    pd.p20,
-    pd.p30,
-    pd.p40,
-    pd.p50,
-    pd.p60,
-    pd.p70,
-    pd.p80,
-    pd.p90,
-    MIN(r.response_time) FILTER (WHERE r.response_time >= pd.p00 AND r.response_time < pd.p10) AS time_p00,
-    MIN(r.response_time) FILTER (WHERE r.response_time >= pd.p10 AND r.response_time < pd.p20) AS time_p10,
-    MIN(r.response_time) FILTER (WHERE r.response_time >= pd.p20 AND r.response_time < pd.p30) AS time_p20,
-    MIN(r.response_time) FILTER (WHERE r.response_time >= pd.p30 AND r.response_time < pd.p40) AS time_p30,
-    MIN(r.response_time) FILTER (WHERE r.response_time >= pd.p40 AND r.response_time < pd.p50) AS time_p40,
-    MIN(r.response_time) FILTER (WHERE r.response_time >= pd.p50 AND r.response_time < pd.p60) AS time_p50,
-    MIN(r.response_time) FILTER (WHERE r.response_time >= pd.p60 AND r.response_time < pd.p70) AS time_p60,
-    MIN(r.response_time) FILTER (WHERE r.response_time >= pd.p70 AND r.response_time < pd.p80) AS time_p70,
-    MIN(r.response_time) FILTER (WHERE r.response_time >= pd.p80 AND r.response_time < pd.p90) AS time_p80,
-    MIN(r.response_time) FILTER (WHERE r.response_time >= pd.p90) AS time_p90
-FROM percentile_data pd
-LEFT JOIN request r ON time_bucket('1 second', r.time) = pd.bucket
-GROUP BY pd.bucket, pd.machine_id,
-	pd.p00,
-    pd.p10,
-    pd.p20,
-    pd.p30,
-    pd.p40,
-    pd.p50,
-    pd.p60,
-    pd.p70,
-    pd.p80,
-    pd.p90
-ORDER BY pd.bucket, pd.machine_id;
-`;
 
 export const serverTimeline = (
   start: string,

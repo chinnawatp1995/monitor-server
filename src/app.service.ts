@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Pool } from 'pg';
 import {
   addRecipientToAlertQuery,
+  cpuQuery,
   createAlertQuery,
   createCpuQuery,
   createErrorQuery,
@@ -13,22 +14,20 @@ import {
   createServerStatus,
   createTxNetworkQuery,
   getAlertQuery,
-  getCpuQuery,
+  getAverageResponseTime,
   getCurrentServerStatusQuery,
-  getMemQuery,
-  getReceivedNetworkQuery,
-  getRequestQuery,
-  getResponseAvgQuery,
-  getResponseDistQuery,
-  getResponseTimePercentile,
-  getTransferedNetworkQuery,
+  getTotalRequest,
+  memQuery,
+  rxNetworkQuery,
   serverTimeline,
+  txNetworkQuery,
   updateAlertQuery,
 } from './utils/rawSql';
 import { fillMissingBuckets } from './utils/util-functions';
-import { TFilterReq, TMetricsReq } from './utils/types/request.type';
+import { TFilterReq } from './utils/types/request.type';
 import { AlertManager } from './utils/alert/AlertManager';
 import { TAlertRuleQuery, TRecipientQuery } from './utils/types/record.type';
+import { groupBy } from 'lodash';
 
 export const TRACK_STATUS = new Map<string, boolean[]>();
 export let pgClient: any;
@@ -72,6 +71,8 @@ export class AppService {
       rxNetwork,
       txNetwork,
     } = metrics;
+
+    this.updateStatus((Object.values(cpu)[0] as any).labels);
 
     if (Object.values(totalRequest).length > 0) {
       const recs = Object.values(totalRequest).map((v) => {
@@ -150,7 +151,6 @@ export class AppService {
           value: (v as any).value,
         };
       });
-      console.log(recs);
 
       await this.pgClient.query({
         text: createCpuQuery(recs, new Date(time).toISOString()),
@@ -208,15 +208,17 @@ export class AppService {
     ).rows;
     // console.log(result);
     result.map((r) => {
-      TRACK_STATUS.set(`${r.service}:${r.machine_id}`, []);
+      TRACK_STATUS.set(`${r.service}:${r.machine_id}`, Array(3).fill(false));
     });
     // console.log(TRACK_STATUS);
   }
 
-  private updateStatus(service: string, machineId: string) {
-    const mapValue = TRACK_STATUS.get(`${service}:${machineId}`) ?? [];
+  private updateStatus(labels: Record<string, string>) {
+    const { service, machine } = labels;
+    const mapValue = TRACK_STATUS.get(`${service}:${machine}`) ?? [];
+    console.log(mapValue);
     mapValue.push(true);
-    TRACK_STATUS.set(`${service}:${machineId}`, mapValue.slice(-3));
+    TRACK_STATUS.set(`${service}:${machine}`, mapValue.slice(-3));
   }
 
   private maxPooling(arr: boolean[]): boolean {
@@ -296,7 +298,7 @@ export class AppService {
     // );
     const records = (
       await this.pgClient.query({
-        text: getRequestQuery(
+        text: getTotalRequest(
           startTime,
           endTime,
           resolution,
@@ -305,12 +307,7 @@ export class AppService {
         ),
       })
     ).rows;
-    return fillMissingBuckets(
-      records,
-      'bucket',
-      'total_requests',
-      'machine_id',
-    );
+    return records;
   }
 
   async getResponseAvgData(filterObj: TFilterReq) {
@@ -320,7 +317,7 @@ export class AppService {
     // );
     const records = (
       await this.pgClient.query({
-        text: getResponseAvgQuery(
+        text: getAverageResponseTime(
           startTime,
           endTime,
           resolution,
@@ -329,36 +326,36 @@ export class AppService {
         ),
       })
     ).rows;
-    return fillMissingBuckets(records, 'bucket', 'avg', 'machine_id');
+    return records;
   }
 
-  async getResponseDistData(filterObj: TFilterReq) {
-    const { startTime, endTime, resolution, services, controllers } = filterObj;
-    // console.log(getResponseTimePercentile(startTime, endTime, resolution));
-    const records = (
-      await this.pgClient.query({
-        text: getResponseTimePercentile(
-          startTime,
-          endTime,
-          resolution,
-          services,
-          controllers,
-        ),
-      })
-    ).rows;
-    // console.log(records);
-    return (Object as any).groupBy(records, ({ machine_id }) => machine_id);
-  }
+  // async getResponseDistData(filterObj: TFilterReq) {
+  //   const { startTime, endTime, resolution, services, controllers } = filterObj;
+  //   // console.log(getResponseTimePercentile(startTime, endTime, resolution));
+  //   const records = (
+  //     await this.pgClient.query({
+  //       text: getResponseTimePercentile(
+  //         startTime,
+  //         endTime,
+  //         resolution,
+  //         services,
+  //         controllers,
+  //       ),
+  //     })
+  //   ).rows;
+  //   // console.log(records);
+  //   return (Object as any).groupBy(records, ({ machine_id }) => machine_id);
+  // }
 
   async getCpuData(filter: TFilterReq) {
     const { startTime, endTime, resolution, machineIds } = filter;
     // console.log(getCpuQuery(startTime, endTime, resolution, machineIds));
     const records = (
       await this.pgClient.query({
-        text: getCpuQuery(startTime, endTime, resolution, machineIds),
+        text: cpuQuery(startTime, endTime, resolution, machineIds),
       })
     ).rows;
-    return fillMissingBuckets(records, 'bucket', 'avg', 'machine_id');
+    return records;
   }
 
   async getMemData(filter: TFilterReq) {
@@ -367,40 +364,30 @@ export class AppService {
     // console.log(getMemQuery(startTime, endTime, resolution, machineIds));
     const records = (
       await this.pgClient.query({
-        text: getMemQuery(startTime, endTime, resolution, machineIds),
+        text: memQuery(startTime, endTime, resolution, machineIds),
       })
     ).rows;
-    return fillMissingBuckets(records, 'bucket', 'avg', 'machine_id');
+    return records;
   }
 
   async getReceivedNetworkData(filter: TFilterReq) {
     const { startTime, endTime, resolution, machineIds } = filter;
     const records = (
       await this.pgClient.query({
-        text: getReceivedNetworkQuery(
-          startTime,
-          endTime,
-          resolution,
-          machineIds,
-        ),
+        text: rxNetworkQuery(startTime, endTime, resolution, machineIds),
       })
     ).rows;
-    return fillMissingBuckets(records, 'bucket', 'avg', 'machine_id');
+    return records;
   }
 
   async getTransferedNetworkData(filter: TFilterReq) {
     const { startTime, endTime, resolution, machineIds } = filter;
     const records = (
       await this.pgClient.query({
-        text: getTransferedNetworkQuery(
-          startTime,
-          endTime,
-          resolution,
-          machineIds,
-        ),
+        text: txNetworkQuery(startTime, endTime, resolution, machineIds),
       })
     ).rows;
-    return fillMissingBuckets(records, 'bucket', 'avg', 'machine_id');
+    return records;
   }
 
   async getErrorToReqRatio(service: string) {
