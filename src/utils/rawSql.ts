@@ -305,7 +305,7 @@ FROM
 GROUP BY 
     machine, service, controller, reason
 ORDER BY 
-    error_per_hour DESC;
+    value DESC;
   `;
 
 export const getAverageResponseTime = (
