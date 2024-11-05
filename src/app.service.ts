@@ -18,10 +18,13 @@ import {
   getAlertQuery,
   getAverageResponseTime,
   getCurrentServerStatusQuery,
+  getPathRatio,
   getTotalRequest,
   memQuery,
   rxNetworkQuery,
   serverTimeline,
+  totalError,
+  totalRequest,
   txNetworkQuery,
   updateAlertQuery,
 } from './utils/rawSql';
@@ -349,6 +352,18 @@ export class AppService {
   //   return (Object as any).groupBy(records, ({ machine_id }) => machine_id);
   // }
 
+  async getPathRatio(filter: any) {
+    const { startTime, endTime, services, machines, controllers } = filter;
+
+    const records = (
+      await this.pgClient.query({
+        text: getPathRatio(startTime, endTime, services, machines, controllers),
+      })
+    ).rows;
+    console.log(records);
+    return records;
+  }
+
   async getCpuData(filter: TFilterReq) {
     const { startTime, endTime, resolution, machineIds } = filter;
     // console.log(getCpuQuery(startTime, endTime, resolution, machineIds));
@@ -357,7 +372,7 @@ export class AppService {
         text: cpuQuery(startTime, endTime, resolution, machineIds),
       })
     ).rows;
-    return records;
+    return fillMissingBuckets(records, 'bucket', 'value', 'machine');
   }
 
   async getMemData(filter: TFilterReq) {
@@ -369,7 +384,7 @@ export class AppService {
         text: memQuery(startTime, endTime, resolution, machineIds),
       })
     ).rows;
-    return records;
+    return fillMissingBuckets(records, 'bucket', 'value', 'machine');
   }
 
   async getReceivedNetworkData(filter: TFilterReq) {
@@ -379,7 +394,7 @@ export class AppService {
         text: rxNetworkQuery(startTime, endTime, resolution, machineIds),
       })
     ).rows;
-    return records;
+    return fillMissingBuckets(records, 'bucket', 'value', 'machine');
   }
 
   async getTransferedNetworkData(filter: TFilterReq) {
@@ -389,28 +404,23 @@ export class AppService {
         text: txNetworkQuery(startTime, endTime, resolution, machineIds),
       })
     ).rows;
-    return records;
+    return fillMissingBuckets(records, 'bucket', 'value', 'machine');
   }
 
-  async getErrorToReqRatio(filterObj: any) {
-    // const { startTime, endTime, service, controller, machine } = filterObj
-    // const totalRequest = (await this.pgClient.query()).rows;
-    // const totalError = (await this.pgClient.query()).rows;
-    // return {
-    //   totalError,
-    //   totalRequest,
-    // };
+  async getErrorToReqRatio(service: any) {
+    const totalReq = (await this.pgClient.query({ text: totalRequest() }))
+      .rows[0];
+    const totalErr = (await this.pgClient.query({ text: totalError() }))
+      .rows[0];
+    return {
+      totalRequest: totalReq.value,
+      totalError: totalErr.value,
+    };
   }
 
   async getErrorRate(filterObj: any) {
-    const {
-      startTime,
-      endTime,
-      resolution,
-      services,
-      machineIds,
-      controllers,
-    } = filterObj;
+    const { startTime, endTime, resolution, services, machines, controllers } =
+      filterObj;
     const records = (
       await this.pgClient.query({
         text: errorRate(
@@ -418,7 +428,7 @@ export class AppService {
           endTime,
           resolution,
           services,
-          machineIds,
+          machines,
           controllers,
         ),
       })

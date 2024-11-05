@@ -132,7 +132,7 @@ WITH request_deltas AS (
 )
 SELECT 
     time_bucket('${timeBucket}', time) AS bucket,
-    SUM(requests_in_interval) AS requests_per_hour,
+    SUM(requests_in_interval) AS value,
     machine,
     controller,
     service
@@ -186,7 +186,7 @@ WITH request_deltas AS (
 )
 SELECT 
     time_bucket('${timeBucket}', time) AS bucket,
-    SUM(requests_in_interval) AS requests_per_hour,
+    SUM(requests_in_interval) AS value,
     machine,
     controller,
     service
@@ -241,7 +241,7 @@ WITH error_deltas AS (
 )
 SELECT 
     time_bucket('${timeBucket}', time) AS bucket,
-    SUM(errors_in_interval) AS error_per_hour,
+    SUM(errors_in_interval) AS value,
     machine,
     controller,
     service,
@@ -295,7 +295,7 @@ WITH error_deltas AS (
     }
 )
 SELECT 
-    SUM(errors_in_interval) AS error_per_hour,
+    SUM(errors_in_interval) AS value,
     machine,
     controller,
     service,
@@ -318,7 +318,7 @@ export const getAverageResponseTime = (
 ) => `
 SELECT 
     time_bucket('${timeBucket}', time) AS bucket,
-    AVG(sum/count) AS avg_response_time,
+    AVG(sum/count) AS value,
     machine,
     controller,
     service
@@ -350,7 +350,7 @@ export const cpuQuery = (
   timeBucket: string,
   machineIds?: string[],
 ) => `
-SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS avg_cpu, machine, service
+SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS value, machine, service
 FROM cpu
 WHERE time BETWEEN '${start}' AND '${end}'
     ${
@@ -368,7 +368,7 @@ export const memQuery = (
   timeBucket: string,
   machineIds?: string[],
 ) => `
-SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS avg_mem, machine, service
+SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS value, machine, service
 FROM mem
 WHERE time BETWEEN '${start}' AND '${end}'
     ${
@@ -386,7 +386,7 @@ export const rxNetworkQuery = (
   timeBucket: string,
   machineIds?: string[],
 ) => `
-SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS avg_rx_network, machine, service
+SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS value, machine, service
 FROM rx_network
 WHERE time BETWEEN '${start}' AND '${end}' 
     ${
@@ -404,7 +404,7 @@ export const txNetworkQuery = (
   timeBucket: string,
   machineIds?: string[],
 ) => `
-SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS avg_tx_network, machine, service
+SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS value, machine, service
 FROM tx_network
 WHERE time BETWEEN '${start}' AND '${end}'
     ${
@@ -469,3 +469,98 @@ export const updateAlertQuery = (alert: TAlertRuleQuery) =>
   }', severity = '${alert.severity}', silence_time = '${
     alert.silence_time
   }', message = '${alert.message}' WHERE id = ${alert.id}`;
+
+export const totalError = () =>
+  `
+WITH error_deltas AS (
+    SELECT
+        time,
+        path,
+        service,
+        machine,
+        controller,
+        reason,
+        CASE
+            WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
+            THEN value  
+            ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
+        END AS errors_in_interval
+    FROM
+        error
+)
+SELECT 
+    SUM(errors_in_interval) AS value
+FROM 
+    error_deltas
+`;
+
+export const totalRequest = () =>
+  `
+WITH request_deltas AS (
+    SELECT
+        time,
+        path,
+        service,
+        machine,
+        controller,
+        CASE
+            WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
+            THEN value  
+            ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
+        END AS requests_in_interval
+    FROM
+        request_count
+)
+SELECT 
+    SUM(requests_in_interval) AS value
+FROM 
+    request_deltas
+`;
+
+export const getPathRatio = (
+  start: string,
+  end: string,
+  services?: string[],
+  machineIds?: string[],
+  controllers?: string[],
+) =>
+  `
+WITH request_deltas AS (
+    SELECT
+        time,
+        path,
+        service,
+        machine,
+        controller,
+        CASE
+            WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
+            THEN value  
+            ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
+        END AS requests_in_interval
+    FROM
+        request_count
+    WHERE time >= '${start}' AND time <= '${end}'
+    ${
+      (services ?? []).length > 0
+        ? `AND service IN  ( ${services.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      (machineIds ?? []).length > 0
+        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      (controllers ?? []).length > 0
+        ? `AND service IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+)
+SELECT 
+    SUM(requests_in_interval) AS value,
+    path
+FROM 
+    request_deltas
+GROUP BY 
+    path
+`;

@@ -36,6 +36,11 @@ export class AppController {
     return await this.appService.getTotalRequestPath(service);
   }
 
+  @Post('path-ratio')
+  async getPathRatio(@Body() filter: any) {
+    return await this.appService.getPathRatio(filter);
+  }
+
   @Post('request')
   async getRequestData(@Body() filter: TFilterReq) {
     return await this.appService.getRequestData(filter);
@@ -62,9 +67,14 @@ export class AppController {
     return await this.appService.getTransferedNetworkData(filter);
   }
 
-  @Get('error-req')
+  @Get('error-req-ratio')
   async getErrorReqRatio(@Query('service') service: string) {
     return await this.appService.getErrorToReqRatio(service);
+  }
+
+  @Post('error-rate')
+  async getErrorRate(@Body() filter: TFilterReq) {
+    return await this.appService.getErrorRate(filter);
   }
 
   @Get('error-ranking')

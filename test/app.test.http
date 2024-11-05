@@ -8,46 +8,13 @@ Content-Type:  {{contentType}}
 
 
 ###
-# @name collectMetrics
-POST {{baseUrl}}/collectMetrics
-Content-Type:  {{contentType}}
-
-{
-    "requestRate": {
-        "data": [
-            {
-                "created": 1,
-                "job": "job_A",
-                "machineId": "machine_01",
-                "count": 10,
-                "path": "path_a"
-            },
-            {
-                "created": 2,
-                "job": "job_A",
-                "machineId": "machine_01",
-                "count": 10,
-                "path": "path_a"
-            },
-            {
-                "created": 3,
-                "job": "job_A",
-                "machineId": "machine_01",
-                "count": 10,
-                "path": "path_a"
-            }
-        ]
-    }
-}
-
-###
 # @name list-service
 GET {{baseUrl}}/services
 
 
 ###
 # @name list-machine
-GET {{baseUrl}}/machines?service=jobA
+GET {{baseUrl}}/machines?service=liberator-api
 
 
 ###
@@ -71,8 +38,8 @@ Content-Type: {{contentType}}
 
 {
     "startTime": "2024-10-08 21:27:53.602+00",
-    "endTime": "2024-10-10 21:28:53.602+00" ,
-    "resolution": "1 hour"
+    "endTime": "2024-12-30 21:28:53.602+00" ,
+    "resolution": "1 minute"
     # "services": ["jobA"],
     # "machineIds": ["machine_02", "machine_01"]
 }
@@ -84,7 +51,7 @@ Content-Type: {{contentType}}
 
 {
     "startTime": "2024-10-08T16:00:00.000Z",
-    "endTime": "2024-10-09T23:00:00.000Z" ,
+    "endTime": "2024-12-09T23:00:00.000Z" ,
     "resolution": "1 hour"
     # "machineIds": ["machine_02"]
 }
@@ -96,7 +63,7 @@ Content-Type: {{contentType}}
 
 {
     "startTime": "2024-10-08 21:27:53.602+00",
-    "endTime": "2024-10-29 21:28:53.602+00" ,
+    "endTime": "2024-12-29 21:28:53.602+00" ,
     "resolution": "1 hour"
     # "machineIds": ["machine_02"]
 }
@@ -108,7 +75,7 @@ Content-Type: {{contentType}}
 
 {
     "startTime": "2024-10-08 21:27:53.602+00",
-    "endTime": "2024-10-09 21:28:53.602+00" ,
+    "endTime": "2024-12-09 21:28:53.602+00" ,
     "resolution": "1 hour"
     # "machineIds": ["machine_02"]
 }
@@ -121,7 +88,7 @@ Content-Type: {{contentType}}
 
 {
     "startTime": "2024-10-08 21:27:53.602+00",
-    "endTime": "2024-10-09 21:28:53.602+00" ,
+    "endTime": "2024-12-09 21:28:53.602+00" ,
     "resolution": "1 hour"
     # "machineIds": ["machine_02"]
 }
@@ -141,7 +108,7 @@ Content-Type: {{contentType}}
 
 {
     "startTime": "2024-10-08 21:27:53.602+00",
-    "endTime": "2024-10-10 21:28:53.602+00" ,
+    "endTime": "2024-12-10 21:28:53.602+00" ,
     "resolution": "1 hour"
     # "services": ["jobA"],
     # "machineIds": ["machine_02", "machine_01"]
@@ -154,7 +121,7 @@ Content-Type: {{contentType}}
 
 {
     "startTime": "2024-10-07 21:27:53.602+00",
-    "endTime": "2024-10-30 21:28:53.602+00" ,
+    "endTime": "2024-12-30 21:28:53.602+00" ,
     "resolution": "1 second"
     # "services": ["liberator-api"],
     # "controllers": ["AppController"]
@@ -167,7 +134,7 @@ Content-Type: {{contentType}}
 
 {
     "startTime": "2024-10-07 21:27:53.602+00",
-    "endTime": "2024-10-30 21:28:53.602+00" ,
+    "endTime": "2024-12-30 21:28:53.602+00" ,
     "services": "jobA",
     "machineIds": ["machine_01", "machine_02"]
 }
