@@ -257,7 +257,6 @@ ORDER BY
 export const errorRanking = (
   start: string,
   end: string,
-  timeBucket: string,
   services?: string[],
   machineIds?: string[],
   controllers?: string[],
@@ -296,7 +295,6 @@ WITH error_deltas AS (
     }
 )
 SELECT 
-    time_bucket('${timeBucket}', time) AS bucket,
     SUM(errors_in_interval) AS error_per_hour,
     machine,
     controller,
@@ -305,9 +303,9 @@ SELECT
 FROM 
     error_deltas
 GROUP BY 
-    bucket, machine, service, controller, reason
+    machine, service, controller, reason
 ORDER BY 
-    bucket;
+    error_per_hour DESC;
   `;
 
 export const getAverageResponseTime = (

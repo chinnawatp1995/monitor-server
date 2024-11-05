@@ -69,7 +69,7 @@ export class AppController {
 
   @Get('error-ranking')
   async getErrorRanking(@Query('service') service: string) {
-    return await this.appService.getErrorReason(service);
+    return await this.appService.getErrorRanking(service);
   }
 
   @Post('avg-response')
@@ -77,10 +77,10 @@ export class AppController {
     return await this.appService.getResponseAvgData(filter);
   }
 
-  @Post('dist-response')
-  async getDistResponse(@Body() filter: TFilterReq) {
-    return await this.appService.getResponseDistData(filter);
-  }
+  // @Post('dist-response')
+  // async getDistResponse(@Body() filter: TFilterReq) {
+  //   return await this.appService.getResponseDistData(filter);
+  // }
 
   @Post('server-timeline')
   async getServerTimeline(@Body() filter: TFilterReq) {

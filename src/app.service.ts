@@ -13,6 +13,8 @@ import {
   createRxNetworkQuery,
   createServerStatus,
   createTxNetworkQuery,
+  errorRanking,
+  errorRate,
   getAlertQuery,
   getAverageResponseTime,
   getCurrentServerStatusQuery,
@@ -390,32 +392,54 @@ export class AppService {
     return records;
   }
 
-  async getErrorToReqRatio(service: string) {
-    return (
-      await this.pgClient.query({
-        text:
-          `SELECT COUNT(*) AS total_requests, ` +
-          `COUNT(CASE WHEN status_code >= 400 THEN 1 END) AS total_errors ` +
-          `FROM request WHERE service = '${service}';`,
-      })
-    ).rows[0];
+  async getErrorToReqRatio(filterObj: any) {
+    // const { startTime, endTime, service, controller, machine } = filterObj
+    // const totalRequest = (await this.pgClient.query()).rows;
+    // const totalError = (await this.pgClient.query()).rows;
+    // return {
+    //   totalError,
+    //   totalRequest,
+    // };
   }
 
-  async getErrorReason(service: string) {
-    return (
+  async getErrorRate(filterObj: any) {
+    const {
+      startTime,
+      endTime,
+      resolution,
+      services,
+      machineIds,
+      controllers,
+    } = filterObj;
+    const records = (
       await this.pgClient.query({
-        text: `SELECT 
-        error_message, 
-        COUNT(*) AS error_count
-      FROM request
-      WHERE status_code >= 400 AND error_message IS NOT NULL 
-            AND service = '${service}'
-      GROUP BY error_message
-      ORDER BY error_count DESC
-      LIMIT 10;
-`,
+        text: errorRate(
+          startTime,
+          endTime,
+          resolution,
+          services,
+          machineIds,
+          controllers,
+        ),
       })
     ).rows;
+    return records;
+  }
+
+  async getErrorRanking(filterObj: any) {
+    const { services, machines, controllers } = filterObj;
+    const records = (
+      await this.pgClient.query({
+        text: errorRanking(
+          new Date(1).toISOString(),
+          new Date().toISOString(),
+          services,
+          machines,
+          controllers,
+        ),
+      })
+    ).rows;
+    return records;
   }
 
   async serverTimeline(filterObj: TFilterReq) {
