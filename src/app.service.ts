@@ -4,11 +4,14 @@ import {
   addRecipientToAlertQuery,
   createAlertQuery,
   createCpuQuery,
+  createErrorQuery,
   createMemQuery,
-  createNetworkQuery,
   createRecipientQuery,
   createRequestQuery,
+  createResponseQuery,
+  createRxNetworkQuery,
   createServerStatus,
+  createTxNetworkQuery,
   getAlertQuery,
   getCpuQuery,
   getCurrentServerStatusQuery,
@@ -22,7 +25,7 @@ import {
   serverTimeline,
   updateAlertQuery,
 } from './utils/rawSql';
-import { fillMissingBuckets, testRuleParser } from './utils/util-functions';
+import { fillMissingBuckets } from './utils/util-functions';
 import { TFilterReq, TMetricsReq } from './utils/types/request.type';
 import { AlertManager } from './utils/alert/AlertManager';
 import { TAlertRuleQuery, TRecipientQuery } from './utils/types/record.type';
@@ -58,80 +61,144 @@ export class AppService {
     // await testRuleParser();
   }
 
-  async collectMetrics(metrics: TMetricsReq) {
-    const { request, cpu, mem, network, resourceCollectionTimes } = metrics;
-    try {
-      this.updateStatus(metrics.tags[0], metrics.tags[1]);
-      if (Object.keys(request).length > 0) {
-        const requestValue = {
-          tags: metrics.tags,
-          values: Object.entries(request ?? {}).flatMap(([k, v]) => {
-            const [path, statusCode] = k.split(':');
-            return (v as any).map((r) => {
-              return {
-                time: new Date(r[0]).toISOString(),
-                responseTime: r[1],
-                errorMessage: r[2],
-                path,
-                statusCode,
-              };
-            });
-          }),
-        };
-        console.log(createRequestQuery(requestValue));
-        await this.pgClient.query({ text: createRequestQuery(requestValue) });
-      }
-      if (Object.values(cpu ?? {}).length > 0) {
-        const cpuValue = {
-          tags: metrics.tags,
-          values: Object.values(cpu).flatMap((v) => {
-            return (v as any).map((r, index) => {
-              return {
-                time: new Date(resourceCollectionTimes[index]).toISOString(),
-                usage: r,
-              };
-            });
-          }),
-        };
-        await this.pgClient.query({ text: createCpuQuery(cpuValue) });
-      }
-      if (Object.values(mem ?? {}).length > 0) {
-        const memValue = {
-          tags: metrics.tags,
-          values: Object.values(mem).flatMap((v) => {
-            return (v as any).map((r, index) => {
-              return {
-                time: new Date(resourceCollectionTimes[index]).toISOString(),
-                usage: r,
-              };
-            });
-          }),
-        };
-        await this.pgClient.query({ text: createMemQuery(memValue) });
-      }
+  async collectMetrics(metrics: any) {
+    const {
+      time,
+      totalRequest,
+      responseTime,
+      error,
+      cpu,
+      mem,
+      rxNetwork,
+      txNetwork,
+    } = metrics;
 
-      if (Object.values(network ?? {}).length > 0) {
-        const networkValue = {
-          tags: metrics.tags,
-          values: Object.values(network).flatMap((v) => {
-            return (v as any).map((r, index) => {
-              // console.log(r);
-              return {
-                time: new Date(resourceCollectionTimes[index]).toISOString(),
-                rx_sec: r[0],
-                tx_sec: r[1],
-              };
-            });
-          }),
+    if (Object.values(totalRequest).length > 0) {
+      const recs = Object.values(totalRequest).map((v) => {
+        const { service, machine, controller, path, statusCode } = (v as any)
+          .labels;
+        return {
+          service,
+          machine,
+          controller,
+          path,
+          statusCode,
+          value: (v as any).value,
         };
-        // console.log(createNetworkQuery(networkValue));
-        // console.log(networkValue);
-        await this.pgClient.query({
-          text: createNetworkQuery(networkValue),
-        });
-      }
-    } catch (e) {
-      console.log(e);
+      });
+
+      console.log(createRequestQuery(recs, new Date(time).toISOString()));
+      await this.pgClient.query({
+        text: createRequestQuery(recs, new Date(time).toISOString()),
+      });
+    }
+
+    if (Object.values(responseTime).length > 0) {
+      const recs = Object.values(responseTime).map((v) => {
+        const { labels, bucketValues, sum, count } = v as any;
+        const { service, machine, controller, path, statusCode } = labels;
+        return {
+          service,
+          machine,
+          controller,
+          path,
+          statusCode,
+          sum,
+          count,
+          bucket_25: bucketValues['25'],
+          bucket_50: bucketValues['50'],
+          bucket_100: bucketValues['100'],
+          bucket_200: bucketValues['200'],
+          bucket_400: bucketValues['400'],
+          bucket_800: bucketValues['800'],
+          bucket_1600: bucketValues['1600'],
+          bucket_3200: bucketValues['3200'],
+          bucket_6400: bucketValues['6400'],
+          bucket_12800: bucketValues['12800'],
+        };
+      });
+      console.log(createResponseQuery(recs, new Date(time).toISOString()));
+      await this.pgClient.query({
+        text: createResponseQuery(recs, new Date(time).toISOString()),
+      });
+    }
+
+    if (Object.values(error).length > 0) {
+      const recs = Object.values(error).map((v) => {
+        const { service, machine, controller, path, statusCode, reason } = (
+          v as any
+        ).labels;
+        return {
+          service,
+          machine,
+          controller,
+          path,
+          statusCode,
+          reason,
+          value: (v as any).value,
+        };
+      });
+      await this.pgClient.query({
+        text: createErrorQuery(recs, new Date(time).toISOString()),
+      });
+    }
+
+    if (Object.values(cpu).length > 0) {
+      const recs = Object.values(cpu).map((v) => {
+        const { service, machine } = (v as any).labels;
+        return {
+          service,
+          machine,
+          value: (v as any).value,
+        };
+      });
+      console.log(recs);
+
+      await this.pgClient.query({
+        text: createCpuQuery(recs, new Date(time).toISOString()),
+      });
+    }
+
+    if (Object.values(mem).length > 0) {
+      const recs = Object.values(mem).map((v) => {
+        const { service, machine } = (v as any).labels;
+        return {
+          service,
+          machine,
+          value: (v as any).value,
+        };
+      });
+      await this.pgClient.query({
+        text: createMemQuery(recs, new Date(time).toISOString()),
+      });
+    }
+
+    if (Object.values(rxNetwork).length > 0) {
+      const recs = Object.values(rxNetwork).map((v) => {
+        const { service, machine } = (v as any).labels;
+        return {
+          service,
+          machine,
+          value: (v as any).value,
+        };
+      });
+      await this.pgClient.query({
+        text: createRxNetworkQuery(recs, new Date(time).toISOString()),
+      });
+    }
+
+    if (Object.values(txNetwork).length > 0) {
+      const recs = Object.values(txNetwork).map((v) => {
+        const { service, machine } = (v as any).labels;
+        return {
+          service,
+          machine,
+          value: (v as any).value,
+        };
+      });
+      await this.pgClient.query({
+        text: createTxNetworkQuery(recs, new Date(time).toISOString()),
+      });
     }
   }
 
