@@ -121,12 +121,12 @@ WITH request_deltas AS (
     }
     ${
       (machineIds ?? []).length > 0
-        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
         : ''
     }
     ${
       (controllers ?? []).length > 0
-        ? `AND service IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
+        ? `AND controller IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
         : ''
     }
 )
@@ -175,12 +175,12 @@ WITH request_deltas AS (
     }
     ${
       (machineIds ?? []).length > 0
-        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
         : ''
     }
     ${
       (controllers ?? []).length > 0
-        ? `AND service IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
+        ? `AND controller IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
         : ''
     }
 )
@@ -230,12 +230,12 @@ WITH error_deltas AS (
     }
     ${
       (machineIds ?? []).length > 0
-        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
         : ''
     }
     ${
       (controllers ?? []).length > 0
-        ? `AND service IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
+        ? `AND controller IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
         : ''
     }
 )
@@ -285,12 +285,12 @@ WITH error_deltas AS (
     }
     ${
       (machineIds ?? []).length > 0
-        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
         : ''
     }
     ${
       (controllers ?? []).length > 0
-        ? `AND service IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
+        ? `AND controller IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
         : ''
     }
 )
@@ -332,12 +332,12 @@ WHERE time BETWEEN '${start}' AND '${end}'
  }
     ${
       (machineIds ?? []).length > 0
-        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
         : ''
     }
     ${
       (controllers ?? []).length > 0
-        ? `AND service IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
+        ? `AND controller IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
         : ''
     }
 GROUP BY bucket, machine, service, controller
@@ -355,7 +355,7 @@ FROM cpu
 WHERE time BETWEEN '${start}' AND '${end}'
     ${
       (machineIds ?? []).length > 0
-        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
         : ''
     }
 GROUP BY bucket, machine, service
@@ -373,7 +373,7 @@ FROM mem
 WHERE time BETWEEN '${start}' AND '${end}'
     ${
       (machineIds ?? []).length > 0
-        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
         : ''
     }
 GROUP BY bucket, machine, service
@@ -391,7 +391,7 @@ FROM rx_network
 WHERE time BETWEEN '${start}' AND '${end}' 
     ${
       (machineIds ?? []).length > 0
-        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
         : ''
     }
 GROUP BY bucket, machine, service
@@ -409,7 +409,7 @@ FROM tx_network
 WHERE time BETWEEN '${start}' AND '${end}'
     ${
       (machineIds ?? []).length > 0
-        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
         : ''
     }
 GROUP BY bucket, machine, service
@@ -547,12 +547,12 @@ WITH request_deltas AS (
     }
     ${
       (machineIds ?? []).length > 0
-        ? `AND service IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
         : ''
     }
     ${
       (controllers ?? []).length > 0
-        ? `AND service IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
+        ? `AND controller IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
         : ''
     }
 )

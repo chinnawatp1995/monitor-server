@@ -296,11 +296,12 @@ export class AppService {
     ).rows;
   }
 
-  async getRequestData(filterObj: TFilterReq) {
-    const { startTime, endTime, resolution, services, machineIds } = filterObj;
+  async getRequestData(filterObj: any) {
+    const { startTime, endTime, resolution, services, machines } = filterObj;
     // console.log(
     //   getRequestQuery(startTime, endTime, resolution, services, machineIds),
     // );
+    const unit = resolution.split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
         text: getTotalRequest(
@@ -308,18 +309,19 @@ export class AppService {
           endTime,
           resolution,
           services,
-          machineIds,
+          machines,
         ),
       })
     ).rows;
-    return records;
+    return fillMissingBuckets(records, 'bucket', 'value', 'machine', unit);
   }
 
-  async getResponseAvgData(filterObj: TFilterReq) {
-    const { startTime, endTime, resolution, services, machineIds } = filterObj;
+  async getResponseAvgData(filterObj: any) {
+    const { startTime, endTime, resolution, services, machines } = filterObj;
     // console.log(
     //   getResponseAvgQuery(startTime, endTime, resolution, services, machineIds),
     // );
+    const unit = resolution.split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
         text: getAverageResponseTime(
@@ -327,11 +329,11 @@ export class AppService {
           endTime,
           resolution,
           services,
-          machineIds,
+          machines,
         ),
       })
     ).rows;
-    return records;
+    return fillMissingBuckets(records, 'bucket', 'value', 'machine', unit);
   }
 
   // async getResponseDistData(filterObj: TFilterReq) {
@@ -367,44 +369,48 @@ export class AppService {
   async getCpuData(filter: TFilterReq) {
     const { startTime, endTime, resolution, machineIds } = filter;
     // console.log(getCpuQuery(startTime, endTime, resolution, machineIds));
+    const unit = resolution.split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
         text: cpuQuery(startTime, endTime, resolution, machineIds),
       })
     ).rows;
-    return fillMissingBuckets(records, 'bucket', 'value', 'machine');
+    return fillMissingBuckets(records, 'bucket', 'value', 'machine', unit);
   }
 
   async getMemData(filter: TFilterReq) {
     // console.log(getTIMESTAMPTZ());
     const { startTime, endTime, resolution, machineIds } = filter;
     // console.log(getMemQuery(startTime, endTime, resolution, machineIds));
+    const unit = resolution.split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
         text: memQuery(startTime, endTime, resolution, machineIds),
       })
     ).rows;
-    return fillMissingBuckets(records, 'bucket', 'value', 'machine');
+    return fillMissingBuckets(records, 'bucket', 'value', 'machine', unit);
   }
 
   async getReceivedNetworkData(filter: TFilterReq) {
     const { startTime, endTime, resolution, machineIds } = filter;
+    const unit = resolution.split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
         text: rxNetworkQuery(startTime, endTime, resolution, machineIds),
       })
     ).rows;
-    return fillMissingBuckets(records, 'bucket', 'value', 'machine');
+    return fillMissingBuckets(records, 'bucket', 'value', 'machine', unit);
   }
 
   async getTransferedNetworkData(filter: TFilterReq) {
     const { startTime, endTime, resolution, machineIds } = filter;
+    const unit = resolution.split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
         text: txNetworkQuery(startTime, endTime, resolution, machineIds),
       })
     ).rows;
-    return fillMissingBuckets(records, 'bucket', 'value', 'machine');
+    return fillMissingBuckets(records, 'bucket', 'value', 'machine', unit);
   }
 
   async getErrorToReqRatio(service: any) {
@@ -421,6 +427,7 @@ export class AppService {
   async getErrorRate(filterObj: any) {
     const { startTime, endTime, resolution, services, machines, controllers } =
       filterObj;
+    const unit = resolution.split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
         text: errorRate(

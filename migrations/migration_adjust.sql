@@ -16,7 +16,7 @@ CREATE TABLE  request (
     path            TEXT NOT NULL,
     status_code     INTEGER NOT NULL,
     response_time   DOUBLE PRECISION NOT NULL,
-    error_message   TEXT,
+    error_message   TEXT
     -- client_ip       TEXT,
     -- user_agent      TEXT,
     -- trace_id        TEXT

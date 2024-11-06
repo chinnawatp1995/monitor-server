@@ -39,9 +39,9 @@ Content-Type: {{contentType}}
 {
     "startTime": "2024-10-08 21:27:53.602+00",
     "endTime": "2024-12-30 21:28:53.602+00" ,
-    "resolution": "1 minute"
+    "resolution": "1 hour"
     # "services": ["jobA"],
-    # "machineIds": ["machine_02", "machine_01"]
+    # "machines": ["machine_03"]
 }
 
 ### 
@@ -94,8 +94,39 @@ Content-Type: {{contentType}}
 }
 
 ###
-# @name error-req
-GET {{baseUrl}}/error-req?service=jobB
+# @name error-req-ratio
+GET {{baseUrl}}/error-req-ratio
+
+
+###
+# @name error-rate
+POST {{baseUrl}}/error-rate
+Content-Type: {{contentType}}
+
+{
+    "startTime": "2024-10-08 21:27:53.602+00",
+    "endTime" : "2024-12-08 21:27:53.602+00",
+    "resolution": "1 hour"
+    # "services": [],
+    # "machines": [],
+    # "controllers": []
+}
+
+
+
+###
+# @name path-ratio
+POST {{baseUrl}}/path-ratio
+Content-Type: {{contentType}}
+
+{
+    "startTime": "2024-10-08 21:27:53.602+00",
+    "endTime" : "2024-12-08 21:27:53.602+00"
+    # "services": [],
+    # "machines": [],
+    # "controllers": []
+}
+
 
 ### 
 # @name error-ranking
