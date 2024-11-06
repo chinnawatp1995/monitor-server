@@ -41,9 +41,8 @@ CREATE TABLE error (
     machine TEXT NOT NULL,
     controller TEXT NOT NULL,
     path TEXT NOT NULL,    
-    statusCode INTEGER NOT NULL, 
-    title TEXT,  
-    reason TEXT,
+    error_code TEXT,  
+    error_title TEXT,
     value BIGINT NOT NULL
 )
 

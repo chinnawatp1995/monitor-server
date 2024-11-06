@@ -129,7 +129,7 @@ export class AppService {
 
     if (Object.values(error).length > 0) {
       const recs = Object.values(error).map((v) => {
-        const { service, machine, controller, path, statusCode, reason } = (
+        const { service, machine, controller, path, errorCode, errorTitle } = (
           v as any
         ).labels;
         return {
@@ -137,8 +137,8 @@ export class AppService {
           machine,
           controller,
           path,
-          statusCode,
-          reason,
+          errorCode,
+          errorTitle,
           value: (v as any).value,
         };
       });

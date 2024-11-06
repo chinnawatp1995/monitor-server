@@ -27,13 +27,13 @@ export const createResponseQuery = (recs, time) => {
 };
 
 export const createErrorQuery = (recs, time) => {
-  const query = `INSERT INTO error (time, service, machine, controller, path, statusCode, reason, value) VALUES `;
+  const query = `INSERT INTO error (time, service, machine, controller, path, error_code, error_title, value) VALUES `;
   const values = recs
     .map(
       (rec) =>
         `('${time}', '${rec.service}', '${rec.machine}', '${
           rec.controller
-        }', '${rec.path}', ${rec.statusCode}, E'${rec.reason.replace(
+        }', '${rec.path}', '${rec.errorCode}', E'${rec.errorTitle.replace(
           /'/g,
           "\\'",
         )}', ${rec.value})`,
@@ -214,7 +214,7 @@ WITH error_deltas AS (
         service,
         machine,
         controller,
-        reason,
+        error_title,
         CASE
             WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
             THEN value  
@@ -245,11 +245,11 @@ SELECT
     machine,
     controller,
     service,
-    reason
+    error_title
 FROM 
     error_deltas
 GROUP BY 
-    bucket, machine, service, controller, reason
+    bucket, machine, service, controller, error_title
 ORDER BY 
     bucket;
   `;
@@ -269,7 +269,7 @@ WITH error_deltas AS (
         service,
         machine,
         controller,
-        reason,
+        error_title,
         CASE
             WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
             THEN value  
@@ -299,7 +299,7 @@ SELECT
     machine,
     controller,
     service,
-    reason
+    error_title
 FROM 
     error_deltas
 GROUP BY 
@@ -479,7 +479,7 @@ WITH error_deltas AS (
         service,
         machine,
         controller,
-        reason,
+        error_title,
         CASE
             WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
             THEN value  
