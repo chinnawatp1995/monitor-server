@@ -77,6 +77,8 @@ export class AppService {
       txNetwork,
     } = metrics;
 
+    if (Object.values(cpu).length === 0) return;
+
     this.updateStatus((Object.values(cpu)[0] as any).labels);
 
     if (Object.values(totalRequest).length > 0) {
@@ -301,7 +303,7 @@ export class AppService {
     // console.log(
     //   getRequestQuery(startTime, endTime, resolution, services, machineIds),
     // );
-    const unit = resolution.split(' ')[1].replace('s', '');
+    const unit = (resolution ?? '1 hour').split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
         text: getTotalRequest(
@@ -321,7 +323,7 @@ export class AppService {
     // console.log(
     //   getResponseAvgQuery(startTime, endTime, resolution, services, machineIds),
     // );
-    const unit = resolution.split(' ')[1].replace('s', '');
+    const unit = (resolution ?? '1 hour').split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
         text: getAverageResponseTime(
@@ -369,7 +371,7 @@ export class AppService {
   async getCpuData(filter: TFilterReq) {
     const { startTime, endTime, resolution, machines } = filter;
     // console.log(getCpuQuery(startTime, endTime, resolution, machineIds));
-    const unit = resolution.split(' ')[1].replace('s', '');
+    const unit = (resolution ?? '1 hour').split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
         text: cpuQuery(startTime, endTime, resolution, machines),
@@ -382,7 +384,7 @@ export class AppService {
     // console.log(getTIMESTAMPTZ());
     const { startTime, endTime, resolution, machines } = filter;
     // console.log(getMemQuery(startTime, endTime, resolution, machineIds));
-    const unit = resolution.split(' ')[1].replace('s', '');
+    const unit = (resolution ?? '1 hour').split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
         text: memQuery(startTime, endTime, resolution, machines),
@@ -393,7 +395,7 @@ export class AppService {
 
   async getReceivedNetworkData(filter: TFilterReq) {
     const { startTime, endTime, resolution, machines } = filter;
-    const unit = resolution.split(' ')[1].replace('s', '');
+    const unit = (resolution ?? '1 hour').split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
         text: rxNetworkQuery(startTime, endTime, resolution, machines),
@@ -404,7 +406,7 @@ export class AppService {
 
   async getTransferedNetworkData(filter: TFilterReq) {
     const { startTime, endTime, resolution, machines } = filter;
-    const unit = resolution.split(' ')[1].replace('s', '');
+    const unit = (resolution ?? '1 hour').split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
         text: txNetworkQuery(startTime, endTime, resolution, machines),
@@ -427,7 +429,7 @@ export class AppService {
   async getErrorRate(filterObj: any) {
     const { startTime, endTime, resolution, services, machines, controllers } =
       filterObj;
-    const unit = resolution.split(' ')[1].replace('s', '');
+    const unit = (resolution ?? '1 hour').split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
         text: errorRate(
