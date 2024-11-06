@@ -53,7 +53,6 @@ export class AppController {
 
   @Post('mem-usage')
   async getMemUsage(@Body() filter: TFilterReq) {
-    console.log(filter);
     return await this.appService.getMemData(filter);
   }
 

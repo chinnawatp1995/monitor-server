@@ -367,12 +367,12 @@ export class AppService {
   }
 
   async getCpuData(filter: TFilterReq) {
-    const { startTime, endTime, resolution, machineIds } = filter;
+    const { startTime, endTime, resolution, machines } = filter;
     // console.log(getCpuQuery(startTime, endTime, resolution, machineIds));
     const unit = resolution.split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
-        text: cpuQuery(startTime, endTime, resolution, machineIds),
+        text: cpuQuery(startTime, endTime, resolution, machines),
       })
     ).rows;
     return fillMissingBuckets(records, 'bucket', 'value', 'machine', unit);
@@ -380,34 +380,34 @@ export class AppService {
 
   async getMemData(filter: TFilterReq) {
     // console.log(getTIMESTAMPTZ());
-    const { startTime, endTime, resolution, machineIds } = filter;
+    const { startTime, endTime, resolution, machines } = filter;
     // console.log(getMemQuery(startTime, endTime, resolution, machineIds));
     const unit = resolution.split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
-        text: memQuery(startTime, endTime, resolution, machineIds),
+        text: memQuery(startTime, endTime, resolution, machines),
       })
     ).rows;
     return fillMissingBuckets(records, 'bucket', 'value', 'machine', unit);
   }
 
   async getReceivedNetworkData(filter: TFilterReq) {
-    const { startTime, endTime, resolution, machineIds } = filter;
+    const { startTime, endTime, resolution, machines } = filter;
     const unit = resolution.split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
-        text: rxNetworkQuery(startTime, endTime, resolution, machineIds),
+        text: rxNetworkQuery(startTime, endTime, resolution, machines),
       })
     ).rows;
     return fillMissingBuckets(records, 'bucket', 'value', 'machine', unit);
   }
 
   async getTransferedNetworkData(filter: TFilterReq) {
-    const { startTime, endTime, resolution, machineIds } = filter;
+    const { startTime, endTime, resolution, machines } = filter;
     const unit = resolution.split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
-        text: txNetworkQuery(startTime, endTime, resolution, machineIds),
+        text: txNetworkQuery(startTime, endTime, resolution, machines),
       })
     ).rows;
     return fillMissingBuckets(records, 'bucket', 'value', 'machine', unit);
@@ -460,10 +460,10 @@ export class AppService {
   }
 
   async serverTimeline(filterObj: TFilterReq) {
-    const { startTime, endTime, services, machineIds } = filterObj;
+    const { startTime, endTime, services, machines } = filterObj;
     const records = (
       await this.pgClient.query({
-        text: serverTimeline(startTime, endTime, machineIds),
+        text: serverTimeline(startTime, endTime, machines),
       })
     ).rows;
     return fillMissingBuckets(records, 'time', 'status', 'machine_id');

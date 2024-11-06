@@ -3,7 +3,7 @@ export type TFilterReq = {
   endTime: string;
   resolution: string;
   services?: string[];
-  machineIds?: string[];
+  machines?: string[];
   controllers: string[];
   resourceCollectionTimes?: number[];
 };
