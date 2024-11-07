@@ -4,14 +4,15 @@ import { AlertRule } from '../types/alert.type';
 
 export class AlertEvaluator {
   private validTerm =
-    /(AVG|SUM|COUNT|MIN|MAX)\((cpu|mem|request|response|error|error_rate|rx_net|tx_net|server_down)(\{[^}]*\})*(,.*'(\d+ (second|minute|hour|day|week|month|year)s*)')*\)/gi;
+    /(AVG|SUM|COUNT|MIN|MAX|)\((cpu|mem|request|response|error|error_rate|rx_net|tx_net|server_status)(\{[^}]*\})*(,.*'(\d+ (second|minute|hour|day|week|month|year)s*)')*\)/gi;
   private ruleTermRegex = {
     aggregation: /AVG|SUM|COUNT|MIN|MAX/i,
     metrics:
-      /cpu|mem|request|response|error|error_rate|rx_net|tx_net|server_down/i,
+      /cpu|mem|request|response|error|error_rate|rx_net|tx_net|server_status/i,
     paramRegex: /{.*}/,
-    service: /services=\[([\w,\-]+)\]/i,
-    machine: /machines=\[([\w,\-]+)\]/i,
+    service: /service=\[([\w,\-]+)\]/i,
+    machine: /machine=\[([\w,\-]+)\]/i,
+    value: /value=\[([\w,\-]+)\]/i,
     time: /['"](\d+ (second|minute|hour|day|week|month|year)s*)["']/,
   };
   private METRIC_QUERY = METRIC_QUERY;
@@ -32,6 +33,7 @@ export class AlertEvaluator {
       metric: term.match(this.ruleTermRegex.metrics)[0],
       service: param?.match(this.ruleTermRegex.service)?.[1]?.split(','),
       machine: param?.match(this.ruleTermRegex.machine)?.[1]?.split(','),
+      value: param?.match(this.ruleTermRegex.value)?.[1]?.split(','),
       duration: term.match(this.ruleTermRegex.time)?.[1] ?? duration,
     };
     return await this.getDataFromRule(
@@ -39,6 +41,7 @@ export class AlertEvaluator {
       alert.metric,
       alert.service,
       alert.machine,
+      alert.value,
       alert.duration,
     );
   }
@@ -61,6 +64,7 @@ export class AlertEvaluator {
     metric: string,
     service: string[],
     machine: string[],
+    value: (string | number)[],
     duration: string,
   ) => {
     const result = await pgClient.query({
@@ -68,6 +72,7 @@ export class AlertEvaluator {
         aggregation,
         service,
         machine,
+        value,
         duration,
       }),
     });

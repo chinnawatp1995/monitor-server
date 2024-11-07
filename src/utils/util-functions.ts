@@ -122,7 +122,7 @@ export const METRIC_QUERY = {
   cpu: (alert: any) =>
     `SELECT ${
       alert.aggregation
-    }(value) as value FROM cpu_usage WHERE time >= now() - interval '${
+    }(value) as value FROM cpu WHERE time >= now() - interval '${
       alert.duration
     }' 
     ${
@@ -132,14 +132,14 @@ export const METRIC_QUERY = {
     }
     ${
       alert.machine
-        ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
+        ? `AND machine IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
         : ''
     }
   `,
   mem: (alert: any) =>
     `SELECT ${
       alert.aggregation
-    }(value) as value FROM mem_usage WHERE time >= now() - interval '${
+    }(value) as value FROM mem WHERE time >= now() - interval '${
       alert.duration
     }' 
     ${
@@ -149,13 +149,13 @@ export const METRIC_QUERY = {
     }
     ${
       alert.machine
-        ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
+        ? `AND machine IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
         : ''
     }
   `,
   rx_network: (alert: any) => `
     SELECT ${alert.aggregation}(rx_sec) as value 
-    FROM network_usage 
+    FROM rx_network 
     WHERE time >= now() - interval '${alert.duration}'
     ${
       alert.service
@@ -164,13 +164,13 @@ export const METRIC_QUERY = {
     }
     ${
       alert.machine
-        ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
+        ? `AND machine IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
         : ''
     }
   `,
   tx_network: (alert: any) => `
     SELECT ${alert.aggregation}(tx_sec) as value 
-    FROM network_usage 
+    FROM tx_network 
     WHERE time >= now() - interval '${alert.duration}'
     ${
       alert.service
@@ -179,7 +179,7 @@ export const METRIC_QUERY = {
     }
     ${
       alert.machine
-        ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
+        ? `AND machine IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
         : ''
     }
   `,
@@ -187,7 +187,7 @@ export const METRIC_QUERY = {
     SELECT COUNT(*) as value 
     FROM (
       SELECT COUNT(*) as total_requests 
-      FROM request 
+      FROM request_count
       WHERE time >= now() - interval '${alert.duration}'
       ${
         alert.service
@@ -205,7 +205,7 @@ export const METRIC_QUERY = {
   `,
   response: (alert: any) => `
     SELECT ${alert.aggregation}(response_time) as value 
-    FROM request 
+    FROM response_time 
     WHERE time >= now() - interval '${alert.duration}'
     ${
       alert.service
@@ -220,7 +220,7 @@ export const METRIC_QUERY = {
   `,
   error_rate: (alert: any) => `
     SELECT (COUNT(CASE WHEN status_code >= 400 THEN 1 END) * 100.0 / COUNT(*)) as value 
-    FROM request 
+    FROM error 
     WHERE time >= now() - interval '${alert.duration}'
     ${
       alert.service
@@ -234,12 +234,9 @@ export const METRIC_QUERY = {
     }
   `,
   error: (alert: any) => `
-    SELECT ${alert.aggregation}(error_count) as value 
-    FROM (
-      SELECT COUNT(*) as error_count 
-      FROM request 
-      WHERE status_code >= 400 
-      AND time >= now() - interval '${alert.duration}'
+      SELECT COUNT(*) as value 
+      FROM error 
+      WHERE time >= now() - interval '${alert.duration}'
       ${
         alert.service
           ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
@@ -252,10 +249,9 @@ export const METRIC_QUERY = {
               .join(',')})`
           : ''
       }
-    )
   `,
-  server_down: (alert: any) =>
-    `SELECT COUNT(*) as value
+  server_status: (alert: any) =>
+    `SELECT ${alert.aggregation}(status) as value
      FROM server_status
      WHERE status = FALSE
      AND time >= now() - interval '${alert.duration}' 
@@ -269,6 +265,11 @@ export const METRIC_QUERY = {
         ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
         : ''
     }
+     ${
+       alert.value
+         ? `AND status IN (${alert.value.map((s) => `'${s}'`).join(',')})`
+         : ''
+     }
      ;`,
 };
 

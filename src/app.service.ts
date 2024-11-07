@@ -333,7 +333,14 @@ export class AppService {
         ),
       })
     ).rows;
-    return fillMissingBuckets(records, 'bucket', 'value', 'machine', unit);
+    return fillMissingBuckets(
+      records,
+      'bucket',
+      'value',
+      'machine',
+      unit,
+      null,
+    );
   }
 
   // async getResponseDistData(filterObj: TFilterReq) {
@@ -375,7 +382,14 @@ export class AppService {
         text: cpuQuery(startTime, endTime, resolution, machines),
       })
     ).rows;
-    return fillMissingBuckets(records, 'bucket', 'value', 'machine', unit);
+    return fillMissingBuckets(
+      records,
+      'bucket',
+      'value',
+      'machine',
+      unit,
+      null,
+    );
   }
 
   async getMemData(filter: TFilterReq) {
@@ -388,7 +402,14 @@ export class AppService {
         text: memQuery(startTime, endTime, resolution, machines),
       })
     ).rows;
-    return fillMissingBuckets(records, 'bucket', 'value', 'machine', unit);
+    return fillMissingBuckets(
+      records,
+      'bucket',
+      'value',
+      'machine',
+      unit,
+      null,
+    );
   }
 
   async getReceivedNetworkData(filter: TFilterReq) {
@@ -399,7 +420,14 @@ export class AppService {
         text: rxNetworkQuery(startTime, endTime, resolution, machines),
       })
     ).rows;
-    return fillMissingBuckets(records, 'bucket', 'value', 'machine', unit);
+    return fillMissingBuckets(
+      records,
+      'bucket',
+      'value',
+      'machine',
+      unit,
+      null,
+    );
   }
 
   async getTransferedNetworkData(filter: TFilterReq) {
@@ -410,7 +438,14 @@ export class AppService {
         text: txNetworkQuery(startTime, endTime, resolution, machines),
       })
     ).rows;
-    return fillMissingBuckets(records, 'bucket', 'value', 'machine', unit);
+    return fillMissingBuckets(
+      records,
+      'bucket',
+      'value',
+      'machine',
+      unit,
+      null,
+    );
   }
 
   async getErrorToReqRatio(service: any) {
