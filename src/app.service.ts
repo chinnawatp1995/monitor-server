@@ -376,7 +376,7 @@ export class AppService {
   async getCpuData(filter: TFilterReq) {
     const { startTime, endTime, resolution, machines } = filter;
     // console.log(getCpuQuery(startTime, endTime, resolution, machineIds));
-    const unit = resolution.split(' ')[1].replace('s', '');
+    const [n, unit] = resolution.split(' ');
     const records = (
       await this.pgClient.query({
         text: cpuQuery(startTime, endTime, resolution, machines),
@@ -389,7 +389,9 @@ export class AppService {
       'machine',
       unit,
       null,
+      Number(n),
     );
+    // return records;
   }
 
   async getMemData(filter: TFilterReq) {

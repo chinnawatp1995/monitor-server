@@ -23,6 +23,7 @@ export function fillMissingBuckets(
   groupByField: string,
   interval = 'hour',
   defaultValue = 0,
+  n = 1,
 ) {
   const parsedData = data.map((item) => ({
     ...item,
@@ -37,7 +38,7 @@ export function fillMissingBuckets(
   let current = minTime.clone();
   while (current <= maxTime) {
     allBuckets.push(current.toISOString());
-    current = current.add(1, interval as any); // Ensure 'interval' matches a valid moment unit like 'hour', 'minute', etc.
+    current = current.add(n, interval as any); // Ensure 'interval' matches a valid moment unit like 'hour', 'minute', etc.
   }
 
   const groupedData = groupBy(parsedData, groupByField);
@@ -219,19 +220,43 @@ export const METRIC_QUERY = {
     }
   `,
   error_rate: (alert: any) => `
-    SELECT (COUNT(CASE WHEN status_code >= 400 THEN 1 END) * 100.0 / COUNT(*)) as value 
-    FROM error 
-    WHERE time >= now() - interval '${alert.duration}'
-    ${
-      alert.service
-        ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
-        : ''
-    }
-    ${
-      alert.machine
-        ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
-        : ''
-    }
+    WITH error_deltas AS (
+      SELECT
+          time,
+          path,
+          service,
+          machine,
+          controller,
+          error_title,
+          CASE
+              WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
+              THEN value  
+              ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
+          END AS errors_in_interval
+      FROM
+          error
+      WHERE time >= now() - interval '${alert.duration}'
+      ${
+        (alert.service ?? []).length > 0
+          ? `AND service IN  ( ${alert.service.map((s) => `'${s}'`).join(',')})`
+          : ''
+      }
+      ${
+        (alert.machine ?? []).length > 0
+          ? `AND machine IN  ( ${alert.machines
+              .map((s) => `'${s}'`)
+              .join(',')})`
+          : ''
+      }
+      ${
+        (alert.controllers ?? []).length > 0
+          ? `AND controller IN  ( ${alert.controllers
+              .map((s) => `'${s}'`)
+              .join(',')})`
+          : ''
+      }
+    )
+    SELECT ${alert.aggregation}(error_deltas) AS value FROM error_deltas 
   `,
   error: (alert: any) => `
       SELECT COUNT(*) as value 
