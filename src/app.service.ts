@@ -400,7 +400,7 @@ export class AppService {
     // console.log(getTIMESTAMPTZ());
     const { startTime, endTime, resolution, machines } = filter;
     // console.log(getMemQuery(startTime, endTime, resolution, machineIds));
-    const unit = (resolution ?? '1 hour').split(' ')[1].replace('s', '');
+    const [n, unit] = resolution.split(' ');
     const records = (
       await this.pgClient.query({
         text: memQuery(startTime, endTime, resolution, machines),
@@ -413,12 +413,13 @@ export class AppService {
       'machine',
       unit,
       null,
+      Number(n),
     );
   }
 
   async getReceivedNetworkData(filter: TFilterReq) {
     const { startTime, endTime, resolution, machines } = filter;
-    const unit = (resolution ?? '1 hour').split(' ')[1].replace('s', '');
+    const [n, unit] = resolution.split(' ');
     const records = (
       await this.pgClient.query({
         text: rxNetworkQuery(startTime, endTime, resolution, machines),
@@ -431,12 +432,13 @@ export class AppService {
       'machine',
       unit,
       null,
+      Number(n),
     );
   }
 
   async getTransferedNetworkData(filter: TFilterReq) {
     const { startTime, endTime, resolution, machines } = filter;
-    const unit = (resolution ?? '1 hour').split(' ')[1].replace('s', '');
+    const [n, unit] = resolution.split(' ');
     const records = (
       await this.pgClient.query({
         text: txNetworkQuery(startTime, endTime, resolution, machines),
@@ -449,6 +451,7 @@ export class AppService {
       'machine',
       unit,
       null,
+      Number(n),
     );
   }
 
