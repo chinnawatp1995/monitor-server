@@ -102,9 +102,9 @@ WITH request_deltas AS (
         machine,
         controller,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time)
         END AS requests_in_interval
     FROM
         request_count
@@ -156,9 +156,9 @@ WITH request_deltas AS (
         machine,
         controller,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time)
         END AS requests_in_interval
     FROM
         request_count
@@ -211,9 +211,9 @@ WITH error_deltas AS (
         controller,
         error_title,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time)
         END AS errors_in_interval
     FROM
         error
@@ -266,9 +266,9 @@ WITH error_deltas AS (
         controller,
         error_title,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time)
         END AS errors_in_interval
     FROM
         error
@@ -476,9 +476,9 @@ WITH error_deltas AS (
         controller,
         error_title,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time)
         END AS errors_in_interval
     FROM
         error
@@ -499,9 +499,9 @@ WITH request_deltas AS (
         machine,
         controller,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time)
         END AS requests_in_interval
     FROM
         request_count
@@ -528,9 +528,9 @@ WITH request_deltas AS (
         machine,
         controller,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time)
         END AS requests_in_interval
     FROM
         request_count
