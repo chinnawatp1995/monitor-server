@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Pool } from 'pg';
 import {
   addRecipientToAlertQuery,
+  cpuGapFillQuery,
   cpuQuery,
   createAlertQuery,
   createCpuQuery,
@@ -20,11 +21,14 @@ import {
   getCurrentServerStatusQuery,
   getPathRatio,
   getTotalRequest,
+  memGapFillQuery,
   memQuery,
+  rxNetworkGapFillQuery,
   rxNetworkQuery,
   serverTimeline,
   totalError,
   totalRequest,
+  txNetworkGapFillQuery,
   txNetworkQuery,
   updateAlertQuery,
 } from './utils/rawSql';
@@ -396,6 +400,27 @@ export class AppService {
     // return records;
   }
 
+  async getCpuGapFillData(filter: any) {
+    // console.log(getTIMESTAMPTZ());
+    const { interval, totalPoint, machines } = filter;
+    // console.log(getMemQuery(startTime, endTime, resolution, machineIds));
+    const records = (
+      await this.pgClient.query({
+        text: cpuGapFillQuery(interval, totalPoint, machines),
+      })
+    ).rows;
+    // return fillMissingBuckets(
+    //   records,
+    //   'bucket',
+    //   'value',
+    //   'machine',
+    //   unit,
+    //   null,
+    //   Number(n),
+    // );
+    return (Object as any).groupBy(records, ({ machine }) => machine);
+  }
+
   async getMemData(filter: TFilterReq) {
     // console.log(getTIMESTAMPTZ());
     const { startTime, endTime, resolution, machines } = filter;
@@ -406,15 +431,37 @@ export class AppService {
         text: memQuery(startTime, endTime, resolution, machines),
       })
     ).rows;
-    return fillMissingBuckets(
-      records,
-      'bucket',
-      'value',
-      'machine',
-      unit,
-      null,
-      Number(n),
-    );
+    // return fillMissingBuckets(
+    //   records,
+    //   'bucket',
+    //   'value',
+    //   'machine',
+    //   unit,
+    //   null,
+    //   Number(n),
+    // );
+    return (Object as any).groupBy(records, ({ bucket }) => bucket);
+  }
+
+  async getMemGapFillData(filter: any) {
+    // console.log(getTIMESTAMPTZ());
+    const { interval, totalPoint, machines } = filter;
+    // console.log(getMemQuery(startTime, endTime, resolution, machineIds));
+    const records = (
+      await this.pgClient.query({
+        text: memGapFillQuery(interval, totalPoint, machines),
+      })
+    ).rows;
+    // return fillMissingBuckets(
+    //   records,
+    //   'bucket',
+    //   'value',
+    //   'machine',
+    //   unit,
+    //   null,
+    //   Number(n),
+    // );
+    return (Object as any).groupBy(records, ({ machine }) => machine);
   }
 
   async getReceivedNetworkData(filter: TFilterReq) {
@@ -436,6 +483,27 @@ export class AppService {
     );
   }
 
+  async getRxNetowrkGapFillData(filter: any) {
+    // console.log(getTIMESTAMPTZ());
+    const { interval, totalPoint, machines } = filter;
+    // console.log(getMemQuery(startTime, endTime, resolution, machineIds));
+    const records = (
+      await this.pgClient.query({
+        text: rxNetworkGapFillQuery(interval, totalPoint, machines),
+      })
+    ).rows;
+    // return fillMissingBuckets(
+    //   records,
+    //   'bucket',
+    //   'value',
+    //   'machine',
+    //   unit,
+    //   null,
+    //   Number(n),
+    // );
+    return (Object as any).groupBy(records, ({ machine }) => machine);
+  }
+
   async getTransferedNetworkData(filter: TFilterReq) {
     const { startTime, endTime, resolution, machines } = filter;
     const [n, unit] = resolution.split(' ');
@@ -453,6 +521,27 @@ export class AppService {
       null,
       Number(n),
     );
+  }
+
+  async getTxNetowrkGapFillData(filter: any) {
+    // console.log(getTIMESTAMPTZ());
+    const { interval, totalPoint, machines } = filter;
+    // console.log(getMemQuery(startTime, endTime, resolution, machineIds));
+    const records = (
+      await this.pgClient.query({
+        text: txNetworkGapFillQuery(interval, totalPoint, machines),
+      })
+    ).rows;
+    // return fillMissingBuckets(
+    //   records,
+    //   'bucket',
+    //   'value',
+    //   'machine',
+    //   unit,
+    //   null,
+    //   Number(n),
+    // );
+    return (Object as any).groupBy(records, ({ machine }) => machine);
   }
 
   async getErrorToReqRatio(service: any) {

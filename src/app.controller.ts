@@ -53,17 +53,20 @@ export class AppController {
 
   @Post('mem-usage')
   async getMemUsage(@Body() filter: TFilterReq) {
-    return await this.appService.getMemData(filter);
+    // return await this.appService.getMemData(filter);
+    return await this.appService.getMemGapFillData(filter);
   }
 
   @Post('rx-network-usage')
   async getReceivedNetwork(@Body() filter: TFilterReq) {
     return await this.appService.getReceivedNetworkData(filter);
+    // return await this.appService.getRxNetowrkGapFillData(filter);
   }
 
   @Post('tx-network-usage')
   async getTransferedNetwork(@Body() filter: TFilterReq) {
     return await this.appService.getTransferedNetworkData(filter);
+    // return await this.appService.getTxNetowrkGapFillData(filter);
   }
 
   @Get('error-req-ratio')

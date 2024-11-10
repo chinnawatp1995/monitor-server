@@ -357,6 +357,23 @@ GROUP BY bucket, machine, service
 ORDER BY bucket;
 `;
 
+export const cpuGapFillQuery = (
+  interval: string,
+  totalPoint: number,
+  machineIds?: string[],
+) => `
+SELECT time_bucket_gapfill(interval '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, AVG(value) AS value, machine, service
+FROM cpu
+WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
+    ${
+      (machineIds ?? []).length > 0
+        ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+GROUP BY bucket, machine, service
+ORDER BY bucket;
+`;
+
 export const memQuery = (
   start: string,
   end: string,
@@ -366,6 +383,23 @@ export const memQuery = (
 SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS value, machine, service
 FROM mem
 WHERE time BETWEEN '${start}' AND '${end}'
+    ${
+      (machineIds ?? []).length > 0
+        ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+GROUP BY bucket, machine, service
+ORDER BY bucket;
+`;
+
+export const memGapFillQuery = (
+  interval: string,
+  totalPoint: number,
+  machineIds?: string[],
+) => `
+SELECT time_bucket_gapfill(interval '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, AVG(value) AS value, machine, service
+FROM mem
+WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
     ${
       (machineIds ?? []).length > 0
         ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
@@ -393,6 +427,23 @@ GROUP BY bucket, machine, service
 ORDER BY bucket;
 `;
 
+export const rxNetworkGapFillQuery = (
+  interval: string,
+  totalPoint: number,
+  machineIds?: string[],
+) => `
+SELECT time_bucket_gapfill(interval '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, AVG(value) AS value, machine, service
+FROM rx_network
+WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
+    ${
+      (machineIds ?? []).length > 0
+        ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+GROUP BY bucket, machine, service
+ORDER BY bucket;
+`;
+
 export const txNetworkQuery = (
   start: string,
   end: string,
@@ -402,6 +453,23 @@ export const txNetworkQuery = (
 SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS value, machine, service
 FROM tx_network
 WHERE time BETWEEN '${start}' AND '${end}'
+    ${
+      (machineIds ?? []).length > 0
+        ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+GROUP BY bucket, machine, service
+ORDER BY bucket;
+`;
+
+export const txNetworkGapFillQuery = (
+  interval: string,
+  totalPoint: number,
+  machineIds?: string[],
+) => `
+SELECT time_bucket_gapfill(interval '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, AVG(value) AS value, machine, service
+FROM tx_network
+WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
     ${
       (machineIds ?? []).length > 0
         ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
