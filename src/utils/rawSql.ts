@@ -102,9 +102,9 @@ WITH request_deltas AS (
         machine,
         controller,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time)
         END AS requests_in_interval
     FROM
         request_count
@@ -183,9 +183,9 @@ WITH request_deltas AS (
         machine,
         controller,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time)
         END AS requests_in_interval
     FROM
         request_count
@@ -237,9 +237,9 @@ WITH request_deltas AS (
         machine,
         controller,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time)
         END AS requests_in_interval
     FROM
         request_count
@@ -292,9 +292,9 @@ WITH error_deltas AS (
         controller,
         error_title,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
         END AS errors_in_interval
     FROM
         error
@@ -347,9 +347,9 @@ export const getErrorCountGapFill = (
           controller,
           error_title,
           CASE
-              WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
+              WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
               THEN value  
-              ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
+              ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
           END AS errors_in_interval
       FROM
           error
@@ -404,9 +404,9 @@ WITH error_deltas AS (
         controller,
         error_title,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
         END AS errors_in_interval
     FROM
         error
@@ -717,9 +717,9 @@ WITH error_deltas AS (
         controller,
         error_title,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
         END AS errors_in_interval
     FROM
         error
@@ -740,9 +740,9 @@ WITH request_deltas AS (
         machine,
         controller,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time)
         END AS requests_in_interval
     FROM
         request_count
@@ -769,9 +769,9 @@ WITH request_deltas AS (
         machine,
         controller,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time)
         END AS requests_in_interval
     FROM
         request_count
@@ -803,7 +803,6 @@ GROUP BY
 
 export const getRequestErrorRatioGapFill = (
   interval: string,
-  totalPoint: number,
   services?: string[],
   machines?: string[],
   controllers?: string[],
@@ -816,9 +815,9 @@ export const getRequestErrorRatioGapFill = (
       machine,
       controller,
       CASE 
-        WHEN value < LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
+        WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time)
         THEN value 
-        ELSE value - LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
+        ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time)
       END AS requests_in_interval
     FROM request_count
     WHERE time >= now() - INTERVAL '${interval}' 
@@ -840,7 +839,7 @@ export const getRequestErrorRatioGapFill = (
     AND time <= now()
   )
   SELECT
-    time_bucket_gapfill(INTERVAL '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket,
+    time_bucket_gapfill(INTERVAL '1 day', time, now() - INTERVAL '${interval}', now()) AS bucket,
     SUM(requests_in_interval) AS value
   FROM request_deltas
   GROUP BY bucket
@@ -856,9 +855,9 @@ ht2 AS (
       controller,
       error_title,
       CASE 
-        WHEN value < LAG(value) OVER (PARTITION BY path, service, machine, controller, error_title ORDER BY time) 
+        WHEN value < LAG(value) OVER (PARTITION BY path, service, machine, controller, error_code, error_title ORDER BY time) 
         THEN value 
-        ELSE value - LAG(value) OVER (PARTITION BY path, service, machine, controller, error_title ORDER BY time) 
+        ELSE value - LAG(value) OVER (PARTITION BY path, service, machine, controller, error_code, error_title ORDER BY time) 
       END AS errors_in_interval
     FROM error
     WHERE time >= now() - INTERVAL '${interval}' 
@@ -880,7 +879,7 @@ ht2 AS (
     AND time <= now()
   )
   SELECT
-    time_bucket_gapfill(INTERVAL '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket,
+    time_bucket_gapfill(INTERVAL '1 day', time, now() - INTERVAL '${interval}', now()) AS bucket,
     SUM(errors_in_interval) AS value
   FROM error_deltas
   GROUP BY bucket

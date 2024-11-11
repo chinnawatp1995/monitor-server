@@ -612,7 +612,6 @@ export class AppService {
       await this.pgClient.query({
         text: getRequestErrorRatioGapFill(
           interval,
-          totalPoint,
           services,
           machines,
           controller,
