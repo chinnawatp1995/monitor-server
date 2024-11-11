@@ -49,10 +49,10 @@ CREATE TABLE error (
 SELECT create_hypertable('error', 'time');
 
 CREATE TABLE cpu (
-    time TIMESTAMPTZ NOT NULL,  
+    time TIMESTAMPTZ NOT NULL, 
     service TEXT NOT NULL,
     machine TEXT NOT NULL, 
-    value BIGINT NOT NULL              
+    value FLOAT NOT NULL              
 )
 
 SELECT create_hypertable('cpu', 'time')
@@ -61,7 +61,7 @@ CREATE TABLE mem (
     time TIMESTAMPTZ NOT NULL,  
     service TEXT NOT NULL,
     machine TEXT NOT NULL, 
-    value BIGINT NOT NULL              
+    value FLOAT NOT NULL              
 )
 
 SELECT create_hypertable('mem', 'time')

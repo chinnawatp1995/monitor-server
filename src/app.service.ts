@@ -18,9 +18,13 @@ import {
   errorRate,
   getAlertQuery,
   getAverageResponseTime,
+  getAverageResponseTimeGapFill,
   getCurrentServerStatusQuery,
+  getErrorCountGapFill,
   getPathRatio,
+  getRequestErrorRatioGapFill,
   getTotalRequest,
+  getTotalRequestGapFill,
   memGapFillQuery,
   memQuery,
   rxNetworkGapFillQuery,
@@ -322,6 +326,17 @@ export class AppService {
     return fillMissingBuckets(records, 'bucket', 'value', 'machine', unit);
   }
 
+  async getRequestDataGapFill(filterObj: any) {
+    const { interval, totalPoint, services, machines } = filterObj;
+    console.log(getTotalRequest(interval, totalPoint, services, machines));
+    const records = (
+      await this.pgClient.query({
+        text: getTotalRequestGapFill(interval, totalPoint, services, machines),
+      })
+    ).rows;
+    return (Object as any).groupBy(records, ({ machine }) => machine);
+  }
+
   async getResponseAvgData(filterObj: any) {
     const { startTime, endTime, resolution, services, machines } = filterObj;
     // console.log(
@@ -347,6 +362,24 @@ export class AppService {
       unit,
       null,
     );
+  }
+
+  async getResponseAvgDataGapFill(filterObj: any) {
+    const { interval, totalPoint, services, machines } = filterObj;
+    // console.log(
+    //   getResponseAvgQuery(startTime, endTime, resolution, services, machineIds),
+    // );
+    const records = (
+      await this.pgClient.query({
+        text: getAverageResponseTimeGapFill(
+          interval,
+          totalPoint,
+          services,
+          machines,
+        ),
+      })
+    ).rows;
+    return (Object as any).groupBy(records, ({ machine }) => machine);
   }
 
   // async getResponseDistData(filterObj: TFilterReq) {
@@ -375,7 +408,6 @@ export class AppService {
         text: getPathRatio(startTime, endTime, services, machines, controllers),
       })
     ).rows;
-    console.log(records);
     return records;
   }
 
@@ -440,7 +472,7 @@ export class AppService {
     //   null,
     //   Number(n),
     // );
-    return (Object as any).groupBy(records, ({ bucket }) => bucket);
+    return (Object as any).groupBy(records, ({ machine }) => machine);
   }
 
   async getMemGapFillData(filter: any) {
@@ -568,6 +600,22 @@ export class AppService {
           services,
           machines,
           controllers,
+        ),
+      })
+    ).rows;
+    return records;
+  }
+
+  async getRequestErrorRatioGapFill(filterObj: any) {
+    const { interval, totalPoint, services, machines, controller } = filterObj;
+    const records = (
+      await this.pgClient.query({
+        text: getRequestErrorRatioGapFill(
+          interval,
+          totalPoint,
+          services,
+          machines,
+          controller,
         ),
       })
     ).rows;

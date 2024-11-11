@@ -139,6 +139,87 @@ ORDER BY
     bucket;
 `;
 
+// WITH t AS (
+//   SELECT
+//     time,
+//     path,
+//     machine,
+//     controller,
+//     service,
+//     (
+//       CASE
+//         WHEN value >= LAG(value) OVER w
+//           THEN value - LAG(value) OVER w
+//         WHEN LAG(value) OVER w IS NULL THEN NULL
+//         ELSE value
+//       END
+//     ) AS "requests_per_interval"
+//   FROM request_count
+//   WINDOW w AS (PARTITION BY machine, controller, path, statuscode ORDER BY time)
+//   ORDER BY time DESC
+// )
+// SELECT
+//   SUM(requests_per_interval),
+//   path,
+//   service,
+//   machine,
+//   controller
+// FROM t
+// GROUP BY path, service, machine, controller;
+
+export const getTotalRequestGapFill = (
+  interval: string,
+  totalPoint: number,
+  services?: string[],
+  machineIds?: string[],
+  controllers?: string[],
+) =>
+  `
+WITH request_deltas AS (
+    SELECT
+        time,
+        path,
+        service,
+        machine,
+        controller,
+        CASE
+            WHEN value < LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
+            THEN value  
+            ELSE value - LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time)
+        END AS requests_in_interval
+    FROM
+        request_count
+    WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
+    ${
+      (services ?? []).length > 0
+        ? `AND service IN  ( ${services.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      (machineIds ?? []).length > 0
+        ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      (controllers ?? []).length > 0
+        ? `AND controller IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+)
+SELECT 
+    time_bucket_gapfill(INTERVAL '${interval}' / '${totalPoint}', time, now() - INTERVAL '${interval}', now()) AS bucket,
+    SUM(requests_in_interval) AS value,
+    machine,
+    controller,
+    service
+FROM 
+    request_deltas
+GROUP BY 
+    bucket, machine, service, controller
+ORDER BY 
+    bucket;
+`;
+
 export const getRequestPath = (
   start: string,
   end: string,
@@ -211,9 +292,9 @@ WITH error_deltas AS (
         controller,
         error_title,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
         END AS errors_in_interval
     FROM
         error
@@ -248,6 +329,63 @@ GROUP BY
 ORDER BY 
     bucket;
   `;
+
+export const getErrorCountGapFill = (
+  interval: string,
+  totalPoint: number,
+  services?: string[],
+  machineIds?: string[],
+  controllers?: string[],
+) =>
+  `
+  WITH error_deltas AS (
+      SELECT
+          time,
+          path,
+          service,
+          machine,
+          controller,
+          error_title,
+          CASE
+              WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
+              THEN value  
+              ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
+          END AS errors_in_interval
+      FROM
+          error
+      WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
+      ${
+        (services ?? []).length > 0
+          ? `AND service IN  ( ${services.map((s) => `'${s}'`).join(',')})`
+          : ''
+      }
+      ${
+        (machineIds ?? []).length > 0
+          ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+          : ''
+      }
+      ${
+        (controllers ?? []).length > 0
+          ? `AND controller IN  ( ${controllers
+              .map((s) => `'${s}'`)
+              .join(',')})`
+          : ''
+      }
+  )
+  SELECT 
+      time_bucket_gapfill(INTERVAL '${interval}' / '${totalPoint}', time, now() - INTERVAL '${interval}', now()) AS bucket,
+      SUM(errors_in_interval) AS value,
+      machine,
+      controller,
+      service,
+      error_title
+  FROM 
+      error_deltas
+  GROUP BY 
+      bucket, machine, service, controller, error_title
+  ORDER BY 
+      bucket;
+    `;
 
 export const errorRanking = (
   start: string,
@@ -339,6 +477,41 @@ GROUP BY bucket, machine, service, controller
 ORDER BY bucket;
 `;
 
+export const getAverageResponseTimeGapFill = (
+  interval: string,
+  totalPoint: number,
+  services?: string[],
+  machineIds?: string[],
+  controllers?: string[],
+) => `
+SELECT 
+    time_bucket_gapfill(INTERVAL '${interval}' / '${totalPoint}', time, now() - INTERVAL '${interval}', now()) AS bucket,
+    AVG(sum/count) AS value,
+    machine,
+    controller,
+    service
+FROM 
+    response_time
+WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
+ ${
+   (services ?? []).length > 0
+     ? `AND service IN  ( ${services.map((s) => `'${s}'`).join(',')})`
+     : ''
+ }
+    ${
+      (machineIds ?? []).length > 0
+        ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      (controllers ?? []).length > 0
+        ? `AND controller IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+GROUP BY bucket, machine, service, controller
+ORDER BY bucket;
+`;
+
 export const cpuQuery = (
   start: string,
   end: string,
@@ -362,7 +535,7 @@ export const cpuGapFillQuery = (
   totalPoint: number,
   machineIds?: string[],
 ) => `
-SELECT time_bucket_gapfill(interval '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, AVG(value) AS value, machine, service
+SELECT time_bucket_gapfill(interval '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, MAX(value) AS value, machine, service
 FROM cpu
 WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
     ${
@@ -397,7 +570,7 @@ export const memGapFillQuery = (
   totalPoint: number,
   machineIds?: string[],
 ) => `
-SELECT time_bucket_gapfill(interval '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, AVG(value) AS value, machine, service
+SELECT time_bucket_gapfill(INTERVAL '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, MAX(value) AS value, machine, service
 FROM mem
 WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
     ${
@@ -627,3 +800,96 @@ FROM
 GROUP BY 
     path
 `;
+
+export const getRequestErrorRatioGapFill = (
+  interval: string,
+  totalPoint: number,
+  services?: string[],
+  machines?: string[],
+  controllers?: string[],
+) => `WITH ht1 AS (
+  WITH request_deltas AS (
+    SELECT
+      time,
+      path,
+      service,
+      machine,
+      controller,
+      CASE 
+        WHEN value < LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
+        THEN value 
+        ELSE value - LAG(value) OVER (PARTITION BY path, statuscode ORDER BY time) 
+      END AS requests_in_interval
+    FROM request_count
+    WHERE time >= now() - INTERVAL '${interval}' 
+     ${
+       (services ?? []).length > 0
+         ? `AND service IN  ( ${services.map((s) => `'${s}'`).join(',')})`
+         : ''
+     }
+    ${
+      (machines ?? []).length > 0
+        ? `AND machine IN  ( ${machines.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      (controllers ?? []).length > 0
+        ? `AND controller IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    AND time <= now()
+  )
+  SELECT
+    time_bucket_gapfill(INTERVAL '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket,
+    SUM(requests_in_interval) AS value
+  FROM request_deltas
+  GROUP BY bucket
+  ORDER BY bucket
+),
+ht2 AS (
+  WITH error_deltas AS (
+    SELECT
+      time,
+      path,
+      service,
+      machine,
+      controller,
+      error_title,
+      CASE 
+        WHEN value < LAG(value) OVER (PARTITION BY path, service, machine, controller, error_title ORDER BY time) 
+        THEN value 
+        ELSE value - LAG(value) OVER (PARTITION BY path, service, machine, controller, error_title ORDER BY time) 
+      END AS errors_in_interval
+    FROM error
+    WHERE time >= now() - INTERVAL '${interval}' 
+     ${
+       (services ?? []).length > 0
+         ? `AND service IN  ( ${services.map((s) => `'${s}'`).join(',')})`
+         : ''
+     }
+    ${
+      (machines ?? []).length > 0
+        ? `AND machine IN  ( ${machines.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      (controllers ?? []).length > 0
+        ? `AND controller IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    AND time <= now()
+  )
+  SELECT
+    time_bucket_gapfill(INTERVAL '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket,
+    SUM(errors_in_interval) AS value
+  FROM error_deltas
+  GROUP BY bucket
+  ORDER BY bucket
+)
+SELECT
+  ht1.bucket,
+  ht1.value as total_request,
+  ht2.value as total_error
+FROM ht1
+INNER JOIN ht2 ON ht1.bucket = ht2.bucket
+ORDER BY bucket ASC;`;

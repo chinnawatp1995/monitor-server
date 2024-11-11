@@ -43,12 +43,19 @@ export class AppController {
 
   @Post('request')
   async getRequestData(@Body() filter: TFilterReq) {
-    return await this.appService.getRequestData(filter);
+    // return await this.appService.getRequestData(filter);
+    return await this.appService.getRequestDataGapFill(filter);
   }
+
+  // @Post('error')
+  // async getErrorCount(@Body() filter: TFilterReq) {
+  //   // return await this.appService.getRequestData(filter);
+  //   return await this.appService.getErrorCountGapFill(filter);
+  // }
 
   @Post('cpu-usage')
   async getCpuUsage(@Body() filter: TFilterReq) {
-    return await this.appService.getCpuData(filter);
+    return await this.appService.getCpuGapFillData(filter);
   }
 
   @Post('mem-usage')
@@ -59,14 +66,14 @@ export class AppController {
 
   @Post('rx-network-usage')
   async getReceivedNetwork(@Body() filter: TFilterReq) {
-    return await this.appService.getReceivedNetworkData(filter);
-    // return await this.appService.getRxNetowrkGapFillData(filter);
+    // return await this.appService.getReceivedNetworkData(filter);
+    return await this.appService.getRxNetowrkGapFillData(filter);
   }
 
   @Post('tx-network-usage')
   async getTransferedNetwork(@Body() filter: TFilterReq) {
-    return await this.appService.getTransferedNetworkData(filter);
-    // return await this.appService.getTxNetowrkGapFillData(filter);
+    // return await this.appService.getTransferedNetworkData(filter);
+    return await this.appService.getTxNetowrkGapFillData(filter);
   }
 
   @Get('error-req-ratio')
@@ -86,7 +93,8 @@ export class AppController {
 
   @Post('avg-response')
   async getAvgResponse(@Body() filter: TFilterReq) {
-    return await this.appService.getResponseAvgData(filter);
+    // return await this.appService.getResponseAvgData(filter);
+    return await this.appService.getResponseAvgDataGapFill(filter);
   }
 
   // @Post('dist-response')
@@ -161,5 +169,10 @@ export class AppController {
   @Get('delete-recipient')
   async deleteRecipient(@Query('recipientId') recipientId: string) {
     return await this.appService.removeRecipient(recipientId);
+  }
+
+  @Post('request-error-ratio')
+  async getReqErrRatio(@Body() filter: TFilterReq) {
+    return await this.appService.getRequestErrorRatioGapFill(filter);
   }
 }

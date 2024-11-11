@@ -31,6 +31,21 @@ Content-Type:  {{contentType}}
     "machineIds": ["machine_01", "machine_02"]
 }
 
+
+###
+# @name error-count
+POST {{baseUrl}}/error
+Content-Type: {{contentType}}
+
+{
+   "interval": "1 week",
+    "totalPoint": 500
+    # "services": ["jobA"],
+    # "machines": ["machine_03"]
+}
+
+
+
 ###
 # @name request-data
 POST {{baseUrl}}/request
@@ -40,6 +55,18 @@ Content-Type: {{contentType}}
     "startTime": "2024-10-08 21:27:53.602+00",
     "endTime": "2024-12-30 21:28:53.602+00" ,
     "resolution": "1 hour"
+    # "services": ["jobA"],
+    # "machines": ["machine_03"]
+}
+
+###
+# @name request-data
+POST {{baseUrl}}/request
+Content-Type: {{contentType}}
+
+{
+    "interval": "1 week",
+    "totalPoint": 500
     # "services": ["jobA"],
     # "machines": ["machine_03"]
 }
@@ -62,9 +89,20 @@ POST {{baseUrl}}/mem-usage
 Content-Type: {{contentType}}
 
 {
-    "startTime": "2024-10-08 21:27:53.602+00",
-    "endTime": "2024-12-29 21:28:53.602+00" ,
-    "resolution": "1 hour"
+    "startTime": "2023-11-08 21:27:53.602+00",
+    "endTime": "2024-11-08 21:28:53.602+00" ,
+    "resolution": "10 minutes"
+    # "machineIds": ["machine_02"]
+}
+
+### 
+# @name get-mem-usage
+POST {{baseUrl}}/mem-usage
+Content-Type: {{contentType}}
+
+{
+    "interval": "1 week",
+    "totalPoint": 500
     # "machineIds": ["machine_02"]
 }
 
@@ -77,6 +115,17 @@ Content-Type: {{contentType}}
     "startTime": "2024-10-08 21:27:53.602+00",
     "endTime": "2024-12-09 21:28:53.602+00" ,
     "resolution": "1 hour"
+    # "machineIds": ["machine_02"]
+}
+
+### 
+# @name get-rx-network-usage
+POST {{baseUrl}}/rx-network-usage
+Content-Type: {{contentType}}
+
+{
+    "interval": "1 week",
+    "totalPoint": 500
     # "machineIds": ["machine_02"]
 }
 
@@ -95,8 +144,14 @@ Content-Type: {{contentType}}
 
 ###
 # @name error-req-ratio
-GET {{baseUrl}}/error-req-ratio
+POST {{baseUrl}}/request-error-ratio
+Content-Type: {{contentType}}
 
+{
+    "interval": "3 days",
+    "totalPoint": 500
+    # "machineIds": ["machine_02"]
+}
 
 ###
 # @name error-rate
@@ -141,6 +196,18 @@ Content-Type: {{contentType}}
     "startTime": "2024-10-08 21:27:53.602+00",
     "endTime": "2024-12-10 21:28:53.602+00" ,
     "resolution": "1 hour"
+    # "services": ["jobA"],
+    # "machineIds": ["machine_02", "machine_01"]
+}
+
+###
+# @name response-avg
+POST {{baseUrl}}/avg-response
+Content-Type: {{contentType}}
+
+{
+    "interval": "1 week",
+    "totalPoint": 500
     # "services": ["jobA"],
     # "machineIds": ["machine_02", "machine_01"]
 }
@@ -246,3 +313,5 @@ Content-Type: {{contentType}}
 # @name remove-recipient
 GET {{baseUrl}}/remove-recipient?ruleId=2&recipientId=1
 Content-Type: {{contentType}}
+
+
