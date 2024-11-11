@@ -1,6 +1,10 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { AppService } from './app.service';
-import { TFilterReq, TMetricsReq } from './utils/types/request.type';
+import {
+  TFilterIntervalReq,
+  TFilterReq,
+  TMetricsReq,
+} from './utils/types/request.type';
 
 @Controller('monitor-server')
 export class AppController {
@@ -42,7 +46,7 @@ export class AppController {
   }
 
   @Post('request')
-  async getRequestData(@Body() filter: TFilterReq) {
+  async getRequestData(@Body() filter: TFilterIntervalReq) {
     // return await this.appService.getRequestData(filter);
     return await this.appService.getRequestDataGapFill(filter);
   }
@@ -54,31 +58,26 @@ export class AppController {
   // }
 
   @Post('cpu-usage')
-  async getCpuUsage(@Body() filter: TFilterReq) {
+  async getCpuUsage(@Body() filter: TFilterIntervalReq) {
     return await this.appService.getCpuGapFillData(filter);
   }
 
   @Post('mem-usage')
-  async getMemUsage(@Body() filter: TFilterReq) {
+  async getMemUsage(@Body() filter: TFilterIntervalReq) {
     // return await this.appService.getMemData(filter);
     return await this.appService.getMemGapFillData(filter);
   }
 
   @Post('rx-network-usage')
-  async getReceivedNetwork(@Body() filter: TFilterReq) {
+  async getReceivedNetwork(@Body() filter: TFilterIntervalReq) {
     // return await this.appService.getReceivedNetworkData(filter);
     return await this.appService.getRxNetowrkGapFillData(filter);
   }
 
   @Post('tx-network-usage')
-  async getTransferedNetwork(@Body() filter: TFilterReq) {
+  async getTransferedNetwork(@Body() filter: TFilterIntervalReq) {
     // return await this.appService.getTransferedNetworkData(filter);
     return await this.appService.getTxNetowrkGapFillData(filter);
-  }
-
-  @Get('error-req-ratio')
-  async getErrorReqRatio(@Query('service') service: string) {
-    return await this.appService.getErrorToReqRatio(service);
   }
 
   @Post('error-rate')
@@ -92,7 +91,7 @@ export class AppController {
   }
 
   @Post('avg-response')
-  async getAvgResponse(@Body() filter: TFilterReq) {
+  async getAvgResponse(@Body() filter: TFilterIntervalReq) {
     // return await this.appService.getResponseAvgData(filter);
     return await this.appService.getResponseAvgDataGapFill(filter);
   }

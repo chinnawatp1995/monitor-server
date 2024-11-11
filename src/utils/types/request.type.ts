@@ -1,3 +1,9 @@
+import {
+  TCounterElement,
+  TGuageElement,
+  THistogramElement,
+} from './metric.type';
+
 export type TFilterReq = {
   startTime: string;
   endTime: string;
@@ -8,11 +14,24 @@ export type TFilterReq = {
   resourceCollectionTimes?: number[];
 };
 
+export type TFilterIntervalReq = {
+  interval: string;
+  totalPoint: number;
+  service?: string;
+  services?: string[];
+  machine?: string;
+  machines?: string[];
+  controller: string;
+  controllers: string[];
+};
+
 export type TMetricsReq = {
-  tags: string[];
-  request: Record<string, any>;
-  cpu: Record<string, any>;
-  mem: Record<string, any>;
-  network?: Record<string, any>;
-  resourceCollectionTimes: number[];
+  time: string | number;
+  totalRequest: Record<string, TCounterElement>;
+  responseTime: Record<string, THistogramElement>;
+  error: Record<string, TCounterElement>;
+  cpu: Record<string, TGuageElement>;
+  mem: Record<string, TGuageElement>;
+  rxNetwork: Record<string, TGuageElement>;
+  txNetwork: Record<string, TGuageElement>;
 };

@@ -19,7 +19,7 @@ GET {{baseUrl}}/machines?service=liberator-api
 
 ###
 # @name get-path
-GET {{baseUrl}}/path?service=jobA
+GET {{baseUrl}}/path?service=liberator-api
 
 
 ###
@@ -148,9 +148,8 @@ POST {{baseUrl}}/request-error-ratio
 Content-Type: {{contentType}}
 
 {
-    "interval": "3 days",
-    "totalPoint": 500
-    # "machineIds": ["machine_02"]
+    "interval": "7 day"
+    # "machines": ["machine_00"]
 }
 
 ###

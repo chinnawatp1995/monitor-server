@@ -3,7 +3,6 @@ import { Pool } from 'pg';
 import {
   addRecipientToAlertQuery,
   cpuGapFillQuery,
-  cpuQuery,
   createAlertQuery,
   createCpuQuery,
   createErrorQuery,
@@ -17,31 +16,30 @@ import {
   errorRanking,
   errorRate,
   getAlertQuery,
-  getAverageResponseTime,
   getAverageResponseTimeGapFill,
   getCurrentServerStatusQuery,
-  getErrorCountGapFill,
   getPathRatio,
   getRequestErrorRatioGapFill,
   getRequestPath,
-  getTotalRequest,
   getTotalRequestGapFill,
   memGapFillQuery,
-  memQuery,
   rxNetworkGapFillQuery,
-  rxNetworkQuery,
   serverTimeline,
-  totalError,
-  totalRequest,
   txNetworkGapFillQuery,
-  txNetworkQuery,
   updateAlertQuery,
 } from './utils/rawSql';
 import { fillMissingBuckets } from './utils/util-functions';
-import { TFilterReq } from './utils/types/request.type';
+import {
+  TFilterIntervalReq,
+  TFilterReq,
+  TMetricsReq,
+} from './utils/types/request.type';
 import { AlertManager } from './utils/alert/AlertManager';
-import { TAlertRuleQuery, TRecipientQuery } from './utils/types/record.type';
-import { groupBy } from 'lodash';
+import {
+  TAlertRuleQuery,
+  TCreateRequest,
+  TRecipientQuery,
+} from './utils/types/record.type';
 
 export const TRACK_STATUS = new Map<string, boolean[]>();
 export let pgClient: any;
@@ -74,7 +72,7 @@ export class AppService {
     // await testRuleParser();
   }
 
-  async collectMetrics(metrics: any) {
+  async collectMetrics(metrics: TMetricsReq) {
     const {
       time,
       totalRequest,
@@ -91,7 +89,7 @@ export class AppService {
     this.updateStatus((Object.values(cpu)[0] as any).labels);
 
     if (Object.values(totalRequest).length > 0) {
-      const recs = Object.values(totalRequest).map((v) => {
+      const recs: TCreateRequest[] = Object.values(totalRequest).map((v) => {
         const { service, machine, controller, path, statusCode } = (v as any)
           .labels;
         return {
@@ -301,26 +299,8 @@ export class AppService {
     ).rows;
   }
 
-  async getRequestData(filterObj: any) {
-    const { startTime, endTime, resolution, services, machines } = filterObj;
-    const unit = (resolution ?? '1 hour').split(' ')[1].replace('s', '');
-    const records = (
-      await this.pgClient.query({
-        text: getTotalRequest(
-          startTime,
-          endTime,
-          resolution,
-          services,
-          machines,
-        ),
-      })
-    ).rows;
-    return fillMissingBuckets(records, 'bucket', 'value', 'machine', unit);
-  }
-
-  async getRequestDataGapFill(filterObj: any) {
+  async getRequestDataGapFill(filterObj: TFilterIntervalReq) {
     const { interval, totalPoint, services, machines } = filterObj;
-    console.log(getTotalRequest(interval, totalPoint, services, machines));
     const records = (
       await this.pgClient.query({
         text: getTotalRequestGapFill(interval, totalPoint, services, machines),
@@ -329,31 +309,7 @@ export class AppService {
     return (Object as any).groupBy(records, ({ machine }) => machine);
   }
 
-  async getResponseAvgData(filterObj: any) {
-    const { startTime, endTime, resolution, services, machines } = filterObj;
-    const unit = (resolution ?? '1 hour').split(' ')[1].replace('s', '');
-    const records = (
-      await this.pgClient.query({
-        text: getAverageResponseTime(
-          startTime,
-          endTime,
-          resolution,
-          services,
-          machines,
-        ),
-      })
-    ).rows;
-    return fillMissingBuckets(
-      records,
-      'bucket',
-      'value',
-      'machine',
-      unit,
-      null,
-    );
-  }
-
-  async getResponseAvgDataGapFill(filterObj: any) {
+  async getResponseAvgDataGapFill(filterObj: TFilterIntervalReq) {
     const { interval, totalPoint, services, machines } = filterObj;
     const records = (
       await this.pgClient.query({
@@ -386,7 +342,7 @@ export class AppService {
   //   return (Object as any).groupBy(records, ({ machine_id }) => machine_id);
   // }
 
-  async getPathRatio(filter: any) {
+  async getPathRatio(filter: TFilterReq) {
     const { startTime, endTime, services, machines, controllers } = filter;
 
     const records = (
@@ -397,26 +353,7 @@ export class AppService {
     return records;
   }
 
-  async getCpuData(filter: TFilterReq) {
-    const { startTime, endTime, resolution, machines } = filter;
-    const [n, unit] = resolution.split(' ');
-    const records = (
-      await this.pgClient.query({
-        text: cpuQuery(startTime, endTime, resolution, machines),
-      })
-    ).rows;
-    return fillMissingBuckets(
-      records,
-      'bucket',
-      'value',
-      'machine',
-      unit,
-      null,
-      Number(n),
-    );
-  }
-
-  async getCpuGapFillData(filter: any) {
+  async getCpuGapFillData(filter: TFilterIntervalReq) {
     const { interval, totalPoint, machines } = filter;
     const records = (
       await this.pgClient.query({
@@ -426,26 +363,7 @@ export class AppService {
     return (Object as any).groupBy(records, ({ machine }) => machine);
   }
 
-  async getMemData(filter: TFilterReq) {
-    const { startTime, endTime, resolution, machines } = filter;
-    const [n, unit] = resolution.split(' ');
-    const records = (
-      await this.pgClient.query({
-        text: memQuery(startTime, endTime, resolution, machines),
-      })
-    ).rows;
-    return fillMissingBuckets(
-      records,
-      'bucket',
-      'value',
-      'machine',
-      unit,
-      null,
-      Number(n),
-    );
-  }
-
-  async getMemGapFillData(filter: any) {
+  async getMemGapFillData(filter: TFilterIntervalReq) {
     const { interval, totalPoint, machines } = filter;
     const records = (
       await this.pgClient.query({
@@ -455,26 +373,7 @@ export class AppService {
     return (Object as any).groupBy(records, ({ machine }) => machine);
   }
 
-  async getReceivedNetworkData(filter: TFilterReq) {
-    const { startTime, endTime, resolution, machines } = filter;
-    const [n, unit] = resolution.split(' ');
-    const records = (
-      await this.pgClient.query({
-        text: rxNetworkQuery(startTime, endTime, resolution, machines),
-      })
-    ).rows;
-    return fillMissingBuckets(
-      records,
-      'bucket',
-      'value',
-      'machine',
-      unit,
-      null,
-      Number(n),
-    );
-  }
-
-  async getRxNetowrkGapFillData(filter: any) {
+  async getRxNetowrkGapFillData(filter: TFilterIntervalReq) {
     const { interval, totalPoint, machines } = filter;
     const records = (
       await this.pgClient.query({
@@ -484,26 +383,7 @@ export class AppService {
     return (Object as any).groupBy(records, ({ machine }) => machine);
   }
 
-  async getTransferedNetworkData(filter: TFilterReq) {
-    const { startTime, endTime, resolution, machines } = filter;
-    const [n, unit] = resolution.split(' ');
-    const records = (
-      await this.pgClient.query({
-        text: txNetworkQuery(startTime, endTime, resolution, machines),
-      })
-    ).rows;
-    return fillMissingBuckets(
-      records,
-      'bucket',
-      'value',
-      'machine',
-      unit,
-      null,
-      Number(n),
-    );
-  }
-
-  async getTxNetowrkGapFillData(filter: any) {
+  async getTxNetowrkGapFillData(filter: TFilterIntervalReq) {
     const { interval, totalPoint, machines } = filter;
     const records = (
       await this.pgClient.query({
@@ -511,17 +391,6 @@ export class AppService {
       })
     ).rows;
     return (Object as any).groupBy(records, ({ machine }) => machine);
-  }
-
-  async getErrorToReqRatio(service: any) {
-    const totalReq = (await this.pgClient.query({ text: totalRequest() }))
-      .rows[0];
-    const totalErr = (await this.pgClient.query({ text: totalError() }))
-      .rows[0];
-    return {
-      totalRequest: totalReq.value,
-      totalError: totalErr.value,
-    };
   }
 
   async getErrorRate(filterObj: any) {
@@ -558,8 +427,7 @@ export class AppService {
     return records;
   }
 
-  async getErrorRanking(filterObj: any) {
-    const { service } = filterObj;
+  async getErrorRanking(service: string) {
     const records = (
       await this.pgClient.query({
         text: errorRanking(service),

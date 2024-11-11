@@ -1,10 +1,14 @@
 import {
   TAlertRuleQuery,
+  TCreateError,
+  TCreateRequest,
+  TCreateResource,
+  TCreateResponseTime,
   TCreateServerStatus,
   TRecipientQuery,
 } from './types/record.type';
 
-export const createRequestQuery = (recs, time) => {
+export const createRequestQuery = (recs: TCreateRequest[], time: string) => {
   const query = `INSERT INTO request_count (time, service, machine, controller, path, statusCode, value) VALUES `;
   const values = recs
     .map(
@@ -15,7 +19,10 @@ export const createRequestQuery = (recs, time) => {
   return `${query}${values};`;
 };
 
-export const createResponseQuery = (recs, time) => {
+export const createResponseQuery = (
+  recs: TCreateResponseTime[],
+  time: string,
+) => {
   const query = `INSERT INTO response_time (time, service, machine, controller, path, statusCode, count, sum, bucket_25, bucket_50, bucket_100, bucket_200, bucket_400, bucket_800, bucket_1600, bucket_3200, bucket_6400, bucket_12800) VALUES `;
   const values = recs
     .map(
@@ -26,7 +33,7 @@ export const createResponseQuery = (recs, time) => {
   return `${query}${values};`;
 };
 
-export const createErrorQuery = (recs, time) => {
+export const createErrorQuery = (recs: TCreateError[], time: string) => {
   const query = `INSERT INTO error (time, service, machine, controller, path, error_code, error_title, value) VALUES `;
   const values = recs
     .map(
@@ -37,7 +44,7 @@ export const createErrorQuery = (recs, time) => {
   return `${query}${values};`;
 };
 
-export const createCpuQuery = (recs, time) => {
+export const createCpuQuery = (recs: TCreateResource[], time: string) => {
   const query = `INSERT INTO cpu (time, service, machine, value) VALUES `;
   const values = recs
     .map(
@@ -47,7 +54,7 @@ export const createCpuQuery = (recs, time) => {
   return `${query}${values};`;
 };
 
-export const createMemQuery = (recs, time) => {
+export const createMemQuery = (recs: TCreateResource[], time: string) => {
   const query = `INSERT INTO mem (time, service, machine, value) VALUES `;
   const values = recs
     .map(
@@ -57,7 +64,7 @@ export const createMemQuery = (recs, time) => {
   return `${query}${values};`;
 };
 
-export const createRxNetworkQuery = (recs, time) => {
+export const createRxNetworkQuery = (recs: TCreateResource[], time: string) => {
   const query = `INSERT INTO rx_network (time, service, machine, value) VALUES `;
   const values = recs
     .map(
@@ -67,7 +74,7 @@ export const createRxNetworkQuery = (recs, time) => {
   return `${query}${values};`;
 };
 
-export const createTxNetworkQuery = (recs, time) => {
+export const createTxNetworkQuery = (recs: TCreateResource[], time: string) => {
   const query = `INSERT INTO tx_network (time, service, machine, value) VALUES `;
   const values = recs
     .map(
@@ -168,7 +175,7 @@ ORDER BY
 // GROUP BY path, service, machine, controller;
 
 export const getTotalRequestGapFill = (
-  interval: string,
+  interval: string, // '1 day', '2 weeks' etc.
   totalPoint: number,
   services?: string[],
   machineIds?: string[],
@@ -207,7 +214,7 @@ WITH request_deltas AS (
     }
 )
 SELECT 
-    time_bucket_gapfill(INTERVAL '${interval}' / '${totalPoint}', time, now() - INTERVAL '${interval}', now()) AS bucket,
+    time_bucket_gapfill(INTERVAL '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket,
     SUM(requests_in_interval) AS value,
     machine,
     controller,
@@ -626,53 +633,6 @@ export const updateAlertQuery = (alert: TAlertRuleQuery) =>
   }', severity = '${alert.severity}', silence_time = '${
     alert.silence_time
   }', message = '${alert.message}' WHERE id = ${alert.id}`;
-
-export const totalError = () =>
-  `
-WITH error_deltas AS (
-    SELECT
-        time,
-        path,
-        service,
-        machine,
-        controller,
-        error_title,
-        CASE
-            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
-            THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
-        END AS errors_in_interval
-    FROM
-        error
-)
-SELECT 
-    SUM(errors_in_interval) AS value
-FROM 
-    error_deltas
-`;
-
-export const totalRequest = () =>
-  `
-WITH request_deltas AS (
-    SELECT
-        time,
-        path,
-        service,
-        machine,
-        controller,
-        CASE
-            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time) 
-            THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time)
-        END AS requests_in_interval
-    FROM
-        request_count
-)
-SELECT 
-    SUM(requests_in_interval) AS value
-FROM 
-    request_deltas
-`;
 
 export const getPathRatio = (
   start: string,
