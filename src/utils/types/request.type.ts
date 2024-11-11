@@ -21,8 +21,8 @@ export type TFilterIntervalReq = {
   services?: string[];
   machine?: string;
   machines?: string[];
-  controller: string;
-  controllers: string[];
+  controller?: string;
+  controllers?: string[];
 };
 
 export type TMetricsReq = {

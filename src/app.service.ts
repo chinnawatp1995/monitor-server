@@ -412,15 +412,15 @@ export class AppService {
     return records;
   }
 
-  async getRequestErrorRatioGapFill(filterObj: any) {
-    const { interval, totalPoint, services, machines, controller } = filterObj;
+  async getRequestErrorRatioGapFill(filterObj: TFilterIntervalReq) {
+    const { interval, services, machines, controllers } = filterObj;
     const records = (
       await this.pgClient.query({
         text: getRequestErrorRatioGapFill(
           interval,
           services,
           machines,
-          controller,
+          controllers,
         ),
       })
     ).rows;

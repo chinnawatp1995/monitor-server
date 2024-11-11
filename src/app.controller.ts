@@ -5,6 +5,8 @@ import {
   TFilterReq,
   TMetricsReq,
 } from './utils/types/request.type';
+import { AlertRule } from './utils/types/alert.type';
+import { TAlertRuleQuery, TRecipientQuery } from './utils/types/record.type';
 
 @Controller('monitor-server')
 export class AppController {
@@ -41,7 +43,7 @@ export class AppController {
   }
 
   @Post('path-ratio')
-  async getPathRatio(@Body() filter: any) {
+  async getPathRatio(@Body() filter: TFilterReq) {
     return await this.appService.getPathRatio(filter);
   }
 
@@ -112,18 +114,20 @@ export class AppController {
   }
 
   @Post('create-alert')
-  async createAlert(@Body() alert: any) {
+  async createAlert(@Body() alert: TAlertRuleQuery) {
     console.log(alert);
     return await this.appService.createAlert(alert);
   }
 
   @Post('create-recipient')
-  async createRecipient(@Body() recipient: any) {
+  async createRecipient(@Body() recipient: TRecipientQuery) {
     return await this.appService.createRecipient(recipient);
   }
 
   @Post('add-recipient')
-  async addRecipientToAlert(@Body() body: any) {
+  async addRecipientToAlert(
+    @Body() body: { ruleId: string; recipientIds: string[] },
+  ) {
     return await this.appService.addRecipientToAlert(body);
   }
 
@@ -133,7 +137,7 @@ export class AppController {
   }
 
   @Post('update-alert')
-  async updateAlert(@Body() body: any) {
+  async updateAlert(@Body() body: TAlertRuleQuery) {
     return await this.appService.updateAlert(body);
   }
 
@@ -171,7 +175,7 @@ export class AppController {
   }
 
   @Post('request-error-ratio')
-  async getReqErrRatio(@Body() filter: TFilterReq) {
+  async getReqErrRatio(@Body() filter: TFilterIntervalReq) {
     return await this.appService.getRequestErrorRatioGapFill(filter);
   }
 }
