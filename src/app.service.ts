@@ -221,11 +221,9 @@ export class AppService {
         text: `SELECT DISTINCT ON (machine_id, service) machine_id, service FROM server_status;`,
       })
     ).rows;
-    // console.log(result);
     result.map((r) => {
       TRACK_STATUS.set(`${r.service}:${r.machine_id}`, Array(3).fill(false));
     });
-    // console.log(TRACK_STATUS);
   }
 
   private updateStatus(labels: Record<string, string>) {
@@ -243,7 +241,6 @@ export class AppService {
 
   async serverStatus() {
     setInterval(async () => {
-      // console.log(...TRACK_STATUS.entries());
       const recs =
         [...TRACK_STATUS.entries()].map(([k, v]) => {
           const [service, machineId] = k.split(':');
@@ -253,9 +250,7 @@ export class AppService {
             status: this.maxPooling(v),
           };
         }) ?? [];
-      // console.log(recs);
       if (recs.length > 0) {
-        // console.log(createServerStatus(recs));
         await this.pgClient.query({
           text: createServerStatus(recs),
         });
@@ -298,7 +293,6 @@ export class AppService {
   }
 
   async getCurrentServerStatus(machineIds?: string[]) {
-    // console.log(getCurrentServerStatusQuery(machineIds));
     return (
       await this.pgClient.query({
         text: getCurrentServerStatusQuery(machineIds),
@@ -308,9 +302,6 @@ export class AppService {
 
   async getRequestData(filterObj: any) {
     const { startTime, endTime, resolution, services, machines } = filterObj;
-    // console.log(
-    //   getRequestQuery(startTime, endTime, resolution, services, machineIds),
-    // );
     const unit = (resolution ?? '1 hour').split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
@@ -339,9 +330,6 @@ export class AppService {
 
   async getResponseAvgData(filterObj: any) {
     const { startTime, endTime, resolution, services, machines } = filterObj;
-    // console.log(
-    //   getResponseAvgQuery(startTime, endTime, resolution, services, machineIds),
-    // );
     const unit = (resolution ?? '1 hour').split(' ')[1].replace('s', '');
     const records = (
       await this.pgClient.query({
@@ -366,9 +354,6 @@ export class AppService {
 
   async getResponseAvgDataGapFill(filterObj: any) {
     const { interval, totalPoint, services, machines } = filterObj;
-    // console.log(
-    //   getResponseAvgQuery(startTime, endTime, resolution, services, machineIds),
-    // );
     const records = (
       await this.pgClient.query({
         text: getAverageResponseTimeGapFill(
@@ -413,7 +398,6 @@ export class AppService {
 
   async getCpuData(filter: TFilterReq) {
     const { startTime, endTime, resolution, machines } = filter;
-    // console.log(getCpuQuery(startTime, endTime, resolution, machineIds));
     const [n, unit] = resolution.split(' ');
     const records = (
       await this.pgClient.query({
@@ -429,70 +413,44 @@ export class AppService {
       null,
       Number(n),
     );
-    // return records;
   }
 
   async getCpuGapFillData(filter: any) {
-    // console.log(getTIMESTAMPTZ());
     const { interval, totalPoint, machines } = filter;
-    // console.log(getMemQuery(startTime, endTime, resolution, machineIds));
     const records = (
       await this.pgClient.query({
         text: cpuGapFillQuery(interval, totalPoint, machines),
       })
     ).rows;
-    // return fillMissingBuckets(
-    //   records,
-    //   'bucket',
-    //   'value',
-    //   'machine',
-    //   unit,
-    //   null,
-    //   Number(n),
-    // );
     return (Object as any).groupBy(records, ({ machine }) => machine);
   }
 
   async getMemData(filter: TFilterReq) {
-    // console.log(getTIMESTAMPTZ());
     const { startTime, endTime, resolution, machines } = filter;
-    // console.log(getMemQuery(startTime, endTime, resolution, machineIds));
     const [n, unit] = resolution.split(' ');
     const records = (
       await this.pgClient.query({
         text: memQuery(startTime, endTime, resolution, machines),
       })
     ).rows;
-    // return fillMissingBuckets(
-    //   records,
-    //   'bucket',
-    //   'value',
-    //   'machine',
-    //   unit,
-    //   null,
-    //   Number(n),
-    // );
-    return (Object as any).groupBy(records, ({ machine }) => machine);
+    return fillMissingBuckets(
+      records,
+      'bucket',
+      'value',
+      'machine',
+      unit,
+      null,
+      Number(n),
+    );
   }
 
   async getMemGapFillData(filter: any) {
-    // console.log(getTIMESTAMPTZ());
     const { interval, totalPoint, machines } = filter;
-    // console.log(getMemQuery(startTime, endTime, resolution, machineIds));
     const records = (
       await this.pgClient.query({
         text: memGapFillQuery(interval, totalPoint, machines),
       })
     ).rows;
-    // return fillMissingBuckets(
-    //   records,
-    //   'bucket',
-    //   'value',
-    //   'machine',
-    //   unit,
-    //   null,
-    //   Number(n),
-    // );
     return (Object as any).groupBy(records, ({ machine }) => machine);
   }
 
@@ -516,23 +474,12 @@ export class AppService {
   }
 
   async getRxNetowrkGapFillData(filter: any) {
-    // console.log(getTIMESTAMPTZ());
     const { interval, totalPoint, machines } = filter;
-    // console.log(getMemQuery(startTime, endTime, resolution, machineIds));
     const records = (
       await this.pgClient.query({
         text: rxNetworkGapFillQuery(interval, totalPoint, machines),
       })
     ).rows;
-    // return fillMissingBuckets(
-    //   records,
-    //   'bucket',
-    //   'value',
-    //   'machine',
-    //   unit,
-    //   null,
-    //   Number(n),
-    // );
     return (Object as any).groupBy(records, ({ machine }) => machine);
   }
 
@@ -556,23 +503,12 @@ export class AppService {
   }
 
   async getTxNetowrkGapFillData(filter: any) {
-    // console.log(getTIMESTAMPTZ());
     const { interval, totalPoint, machines } = filter;
-    // console.log(getMemQuery(startTime, endTime, resolution, machineIds));
     const records = (
       await this.pgClient.query({
         text: txNetworkGapFillQuery(interval, totalPoint, machines),
       })
     ).rows;
-    // return fillMissingBuckets(
-    //   records,
-    //   'bucket',
-    //   'value',
-    //   'machine',
-    //   unit,
-    //   null,
-    //   Number(n),
-    // );
     return (Object as any).groupBy(records, ({ machine }) => machine);
   }
 
@@ -645,7 +581,6 @@ export class AppService {
       })
     ).rows;
     return fillMissingBuckets(records, 'time', 'status', 'machine_id');
-    // return records;
   }
 
   async createAlert(alert: TAlertRuleQuery) {
