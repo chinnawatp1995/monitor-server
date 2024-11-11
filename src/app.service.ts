@@ -559,16 +559,10 @@ export class AppService {
   }
 
   async getErrorRanking(filterObj: any) {
-    const { services, machines, controllers } = filterObj;
+    const { service } = filterObj;
     const records = (
       await this.pgClient.query({
-        text: errorRanking(
-          new Date(1).toISOString(),
-          new Date().toISOString(),
-          services,
-          machines,
-          controllers,
-        ),
+        text: errorRanking(service),
       })
     ).rows;
     return records;

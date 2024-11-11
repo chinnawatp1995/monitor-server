@@ -333,58 +333,33 @@ export const getErrorCountGapFill = (
       bucket;
     `;
 
-export const errorRanking = (
-  start: string,
-  end: string,
-  services?: string[],
-  machineIds?: string[],
-  controllers?: string[],
-) =>
+export const errorRanking = (service: string, interval = '1  month') =>
   `
 WITH error_deltas AS (
     SELECT
-        time,
-        path,
-        service,
-        machine,
-        controller,
-        error_title,
-        CASE
-            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
-            THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
-        END AS errors_in_interval
-    FROM
-        error
-    WHERE time >= '${start}' AND time <= '${end}'
-    ${
-      (services ?? []).length > 0
-        ? `AND service IN  ( ${services.map((s) => `'${s}'`).join(',')})`
-        : ''
-    }
-    ${
-      (machineIds ?? []).length > 0
-        ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
-        : ''
-    }
-    ${
-      (controllers ?? []).length > 0
-        ? `AND controller IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
-        : ''
-    }
-)
-SELECT 
-    SUM(errors_in_interval) AS value,
-    machine,
-    controller,
-    service,
-    error_title
-FROM 
-    error_deltas
-GROUP BY 
-    machine, service, controller, reason
-ORDER BY 
-    value DESC;
+      time,
+      path,
+      service,
+      machine,
+      controller,
+      error_title,
+      error_code,
+      CASE 
+        WHEN value < LAG(value) OVER (PARTITION BY path, service, machine, controller, error_code, error_title ORDER BY time) 
+        THEN value 
+        ELSE value - LAG(value) OVER (PARTITION BY path, service, machine, controller, error_code, error_title ORDER BY time) 
+      END AS errors_in_interval
+    FROM error
+    WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
+     ${service ? `AND service = '${service}'` : ''}
+  )
+  SELECT
+    error_code,
+    error_title,
+    SUM(errors_in_interval) AS value
+  FROM error_deltas
+  GROUP BY error_code, error_title
+  ORDER BY value
   `;
 
 export const getAverageResponseTime = (
