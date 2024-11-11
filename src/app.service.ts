@@ -23,6 +23,7 @@ import {
   getErrorCountGapFill,
   getPathRatio,
   getRequestErrorRatioGapFill,
+  getRequestPath,
   getTotalRequest,
   getTotalRequestGapFill,
   memGapFillQuery,
@@ -287,7 +288,7 @@ export class AppService {
   async getTotalRequestPath(service: string) {
     return (
       await this.pgClient.query({
-        text: `SELECT path, COUNT(*) AS total FROM request WHERE service = '${service}' GROUP BY path`,
+        text: getRequestPath(service),
       })
     ).rows;
   }

@@ -220,60 +220,6 @@ ORDER BY
     bucket;
 `;
 
-export const getRequestPath = (
-  start: string,
-  end: string,
-  timeBucket: string,
-  services?: string[],
-  machineIds?: string[],
-  controllers?: string[],
-) =>
-  `
-WITH request_deltas AS (
-    SELECT
-        time,
-        path,
-        service,
-        machine,
-        controller,
-        CASE
-            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time) 
-            THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time)
-        END AS requests_in_interval
-    FROM
-        request_count
-    WHERE time >= '${start}' AND time <= '${end}'
-    ${
-      (services ?? []).length > 0
-        ? `AND service IN  ( ${services.map((s) => `'${s}'`).join(',')})`
-        : ''
-    }
-    ${
-      (machineIds ?? []).length > 0
-        ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
-        : ''
-    }
-    ${
-      (controllers ?? []).length > 0
-        ? `AND controller IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
-        : ''
-    }
-)
-SELECT 
-    time_bucket('${timeBucket}', time) AS bucket,
-    SUM(requests_in_interval) AS value,
-    machine,
-    controller,
-    service
-FROM 
-    request_deltas
-GROUP BY 
-    bucket, machine, service, controller
-ORDER BY 
-    bucket;
-`;
-
 export const errorRate = (
   start: string,
   end: string,
@@ -892,3 +838,30 @@ SELECT
 FROM ht1
 INNER JOIN ht2 ON ht1.bucket = ht2.bucket
 ORDER BY bucket ASC;`;
+
+export const getRequestPath = (services: string, interval = '1 week') =>
+  `WITH request_deltas AS (
+    SELECT
+        time,
+        path,
+        service,
+        machine,
+        controller,
+        CASE
+            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time) 
+            THEN value  
+            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time)
+        END AS requests_in_interval
+    FROM
+        request_count
+    WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
+    ${services ? `AND service =  '${services}'` : ''}
+  )
+  SELECT 
+    path, 
+    SUM(requests_in_interval)  as value
+  FROM 
+    request_deltas
+  GROUP BY 
+    path
+`;
