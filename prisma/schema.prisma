@@ -8,7 +8,7 @@ datasource db {
 }
 
 model request_count {
-    time       DateTime @db.Timestamptz(6)
+    time       DateTime @default(now()) @db.Timestamptz(6)
     service    String
     machine    String
     controller String
@@ -20,7 +20,7 @@ model request_count {
 }
 
 model response_time {
-    time         DateTime @db.Timestamptz(6)
+    time         DateTime @default(now()) @db.Timestamptz(6)
     service      String
     machine      String
     controller   String
@@ -43,7 +43,7 @@ model response_time {
 }
 
 model error {
-    time        DateTime @db.Timestamptz(6)
+    time        DateTime @default(now()) @db.Timestamptz(6)
     service     String
     machine     String
     controller  String
@@ -56,7 +56,7 @@ model error {
 }
 
 model cpu {
-    time    DateTime @db.Timestamptz(6)
+    time    DateTime @default(now()) @db.Timestamptz(6)
     service String
     machine String
     value   Float
@@ -65,7 +65,7 @@ model cpu {
 }
 
 model mem {
-    time    DateTime @db.Timestamptz(6)
+    time    DateTime @default(now()) @db.Timestamptz(6)
     service String
     machine String
     value   Float
@@ -74,7 +74,7 @@ model mem {
 }
 
 model rx_network {
-    time    DateTime @db.Timestamptz(6)
+    time    DateTime @default(now()) @db.Timestamptz(6)
     service String
     machine String
     value   BigInt
@@ -83,10 +83,19 @@ model rx_network {
 }
 
 model tx_network {
-    time    DateTime @db.Timestamptz(6)
+    time    DateTime @default(now()) @db.Timestamptz(6)
     service String
     machine String
     value   BigInt
 
     @@unique([time, service, machine])
+}
+
+model server_status {
+    time       DateTime @default(now()) @db.Timestamptz(6)
+    machine_id String
+    service    String
+    status     Boolean
+
+    @@unique([time, service, machine_id])
 }
