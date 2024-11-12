@@ -110,6 +110,7 @@ export const METRIC_QUERY = {
         ? `AND machine IN (${alert.machines.map((m) => `'${m}'`).join(',')})`
         : ''
     }
+    ${alert.aggregation.toUpperCase() === 'LAST' ? 'LIMIT 1' : ''}
   `,
   mem: (alert: Expression) =>
     `SELECT ${
@@ -127,6 +128,7 @@ export const METRIC_QUERY = {
         ? `AND machine IN (${alert.machines.map((m) => `'${m}'`).join(',')})`
         : ''
     }
+    ${alert.aggregation.toUpperCase() === 'LAST' ? 'LIMIT 1' : ''}
   `,
   rx_network: (alert: Expression) => `
     SELECT ${alert.aggregation}(rx_sec) as value 
@@ -142,6 +144,7 @@ export const METRIC_QUERY = {
         ? `AND machine IN (${alert.machines.map((m) => `'${m}'`).join(',')})`
         : ''
     }
+    ${alert.aggregation.toUpperCase() === 'LAST' ? 'LIMIT 1' : ''}
   `,
   tx_network: (alert: Expression) => `
     SELECT ${alert.aggregation}(tx_sec) as value 
@@ -157,29 +160,53 @@ export const METRIC_QUERY = {
         ? `AND machine IN (${alert.machines.map((m) => `'${m}'`).join(',')})`
         : ''
     }
+    ${alert.aggregation.toUpperCase() === 'LAST' ? 'LIMIT 1' : ''}
   `,
   request: (alert: Expression) => `
-    SELECT COUNT(*) as value 
-    FROM (
-      SELECT COUNT(*) as total_requests 
-      FROM request_count
+    WITH request_deltas AS (
+      SELECT
+          time,
+          path,
+          service,
+          machine,
+          controller,
+          error_title,
+          CASE
+              WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time) 
+              THEN value  
+              ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time)
+          END AS request_in_interval
+      FROM
+          error
       WHERE time >= now() - interval '${alert.duration}'
       ${
-        alert.services
-          ? `AND service IN (${alert.services.map((s) => `'${s}'`).join(',')})`
+        (alert.services ?? []).length > 0
+          ? `AND service IN  ( ${alert.services
+              .map((s) => `'${s}'`)
+              .join(',')})`
           : ''
       }
       ${
-        alert.machines
-          ? `AND machine_id IN (${alert.machines
-              .map((m) => `'${m}'`)
+        (alert.machines ?? []).length > 0
+          ? `AND machine IN  ( ${alert.machines
+              .map((s) => `'${s}'`)
+              .join(',')})`
+          : ''
+      }
+      ${
+        (alert.controllers ?? []).length > 0
+          ? `AND controller IN  ( ${alert.controllers
+              .map((s) => `'${s}'`)
               .join(',')})`
           : ''
       }
     )
+    SELECT ${
+      alert.aggregation
+    }(request_in_interval) AS value FROM request_deltas 
   `,
   response: (alert: Expression) => `
-    SELECT ${alert.aggregation}(response_time) as value 
+    SELECT ${alert.aggregation}(sum/count) as value 
     FROM response_time 
     WHERE time >= now() - interval '${alert.duration}'
     ${
@@ -192,8 +219,9 @@ export const METRIC_QUERY = {
         ? `AND machine_id IN (${alert.machines.map((m) => `'${m}'`).join(',')})`
         : ''
     }
+    ${alert.aggregation.toUpperCase() === 'LAST' ? 'LIMIT 1' : ''}
   `,
-  error_rate: (alert: Expression) => `
+  error: (alert: Expression) => `
     WITH error_deltas AS (
       SELECT
           time,
@@ -203,9 +231,9 @@ export const METRIC_QUERY = {
           controller,
           error_title,
           CASE
-              WHEN value < LAG(value) OVER (PARTITION BY path ORDER BY time) 
+              WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time) 
               THEN value  
-              ELSE value - LAG(value) OVER (PARTITION BY path ORDER BY time)
+              ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
           END AS errors_in_interval
       FROM
           error
@@ -232,24 +260,7 @@ export const METRIC_QUERY = {
           : ''
       }
     )
-    SELECT ${alert.aggregation}(error_deltas) AS value FROM error_deltas 
-  `,
-  error: (alert: Expression) => `
-      SELECT COUNT(*) as value 
-      FROM error 
-      WHERE time >= now() - interval '${alert.duration}'
-      ${
-        alert.services
-          ? `AND service IN (${alert.services.map((s) => `'${s}'`).join(',')})`
-          : ''
-      }
-      ${
-        alert.machines
-          ? `AND machine_id IN (${alert.machines
-              .map((m) => `'${m}'`)
-              .join(',')})`
-          : ''
-      }
+    SELECT ${alert.aggregation}(errors_in_interval) AS value FROM error_deltas 
   `,
   server_status: (alert: Expression) =>
     `SELECT ${alert.aggregation}(status) as value
