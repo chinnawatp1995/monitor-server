@@ -1,0 +1,93 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model request_count {
+    time       DateTime @db.Timestamptz(6)
+    service    String
+    machine    String
+    controller String
+    path       String
+    statusCode Int
+    value      BigInt
+
+    @@unique([time, service, machine, controller, path, statusCode])
+}
+
+model response_time {
+    time         DateTime @db.Timestamptz(6)
+    service      String
+    machine      String
+    controller   String
+    statusCode   Int
+    path         String
+    count        BigInt
+    sum          Float
+    bucket_25    BigInt   @default(0)
+    bucket_50    BigInt   @default(0)
+    bucket_100   BigInt   @default(0)
+    bucket_200   BigInt   @default(0)
+    bucket_400   BigInt   @default(0)
+    bucket_800   BigInt   @default(0)
+    bucket_1600  BigInt   @default(0)
+    bucket_3200  BigInt   @default(0)
+    bucket_6400  BigInt   @default(0)
+    bucket_12800 BigInt   @default(0)
+    bucket_25600 BigInt   @default(0)
+
+    @@unique([time, service, machine, controller, path, statusCode])
+}
+
+model error {
+    time        DateTime @db.Timestamptz(6)
+    service     String
+    machine     String
+    controller  String
+    path        String
+    error_code  String?
+    error_title String?
+    value       BigInt
+
+    @@unique([time, service, machine, controller, path])
+}
+
+model cpu {
+    time    DateTime @db.Timestamptz(6)
+    service String
+    machine String
+    value   Float
+
+    @@unique([time, service, machine])
+}
+
+model mem {
+    time    DateTime @db.Timestamptz(6)
+    service String
+    machine String
+    value   Float
+
+    @@unique([time, service, machine])
+}
+
+model rx_network {
+    time    DateTime @db.Timestamptz(6)
+    service String
+    machine String
+    value   BigInt
+
+    @@unique([time, service, machine])
+}
+
+model tx_network {
+    time    DateTime @db.Timestamptz(6)
+    service String
+    machine String
+    value   BigInt
+
+    @@unique([time, service, machine])
+}
