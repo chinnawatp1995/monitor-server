@@ -241,7 +241,7 @@ Content-Type: {{contentType}}
 
 ###
 # @name delete-rule
-GET {{baseUrl}}/delete-rule?ruleId=20
+GET {{baseUrl}}/delete-rule?ruleId=2
 Content-Type: {{contentType}}
 
 
@@ -250,4 +250,9 @@ Content-Type: {{contentType}}
 GET {{baseUrl}}/remove-recipient?ruleId=2&recipientId=1
 Content-Type: {{contentType}}
 
+
+###
+# @name delete-recipient
+GET {{baseUrl}}/delete-recipient?recipientId=2
+Content-Type: {{contentType}}
 
