@@ -7,24 +7,25 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model request_count {
+model RequestCount {
     time       DateTime @default(now()) @db.Timestamptz(6)
     service    String
     machine    String
     controller String
     path       String
-    statusCode Int
+    statusCode Int      @map("status_code")
     value      BigInt
 
     @@unique([time, service, machine, controller, path, statusCode])
+    @@map("request_count")
 }
 
-model response_time {
+model ResponseTime {
     time         DateTime @default(now()) @db.Timestamptz(6)
     service      String
     machine      String
     controller   String
-    statusCode   Int
+    statusCode   Int      @map("status_code")
     path         String
     count        BigInt
     sum          Float
@@ -40,62 +41,69 @@ model response_time {
     bucket_12800 BigInt   @default(0)
 
     @@unique([time, service, machine, controller, path, statusCode])
+    @@map("response_time")
 }
 
-model error {
-    time        DateTime @default(now()) @db.Timestamptz(6)
-    service     String
-    machine     String
-    controller  String
-    path        String
-    error_code  String?
-    error_title String?
-    value       BigInt
+model Error {
+    time       DateTime @default(now()) @db.Timestamptz(6)
+    service    String
+    machine    String
+    controller String
+    path       String
+    errorCode  String?  @map("error_code")
+    errorTitle String?  @map("error_title")
+    value      BigInt
 
     @@unique([time, service, machine, controller, path])
+    @@map("error")
 }
 
-model cpu {
+model Cpu {
     time    DateTime @default(now()) @db.Timestamptz(6)
     service String
     machine String
     value   Float
 
     @@unique([time, service, machine])
+    @@map("cpu")
 }
 
-model mem {
+model Mem {
     time    DateTime @default(now()) @db.Timestamptz(6)
     service String
     machine String
     value   Float
 
     @@unique([time, service, machine])
+    @@map("mem")
 }
 
-model rx_network {
+model RxNetwork {
     time    DateTime @default(now()) @db.Timestamptz(6)
     service String
     machine String
     value   BigInt
 
     @@unique([time, service, machine])
+    @@map("rx_network")
 }
 
-model tx_network {
+model TxNetwork {
     time    DateTime @default(now()) @db.Timestamptz(6)
     service String
     machine String
     value   BigInt
 
     @@unique([time, service, machine])
+    @@map("tx_network")
 }
 
-model server_status {
-    time       DateTime @default(now()) @db.Timestamptz(6)
-    machine_id String
-    service    String
-    status     Boolean
+model ServerStatus {
+    time      DateTime @default(now()) @db.Timestamptz(6)
+    machineId String   @map("machine_id")
+    service   String
+    status    Boolean
 
-    @@unique([time, service, machine_id])
+    @@unique([time, service, machineId])
+    @@map("server_status")
 }

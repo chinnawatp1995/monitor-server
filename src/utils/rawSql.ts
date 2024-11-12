@@ -9,7 +9,7 @@ import {
 } from './types/record.type';
 
 export const createRequestQuery = (recs: TCreateRequest[], time: string) => {
-  const query = `INSERT INTO request_count (time, service, machine, controller, path, statusCode, value) VALUES `;
+  const query = `INSERT INTO request_count (time, service, machine, controller, path, status_code, value) VALUES `;
   const values = recs
     .map(
       (rec) =>
@@ -23,7 +23,7 @@ export const createResponseQuery = (
   recs: TCreateResponseTime[],
   time: string,
 ) => {
-  const query = `INSERT INTO response_time (time, service, machine, controller, path, statusCode, count, sum, bucket_25, bucket_50, bucket_100, bucket_200, bucket_400, bucket_800, bucket_1600, bucket_3200, bucket_6400, bucket_12800) VALUES `;
+  const query = `INSERT INTO response_time (time, service, machine, controller, path, status_code, count, sum, bucket_25, bucket_50, bucket_100, bucket_200, bucket_400, bucket_800, bucket_1600, bucket_3200, bucket_6400, bucket_12800) VALUES `;
   const values = recs
     .map(
       (rec) =>
@@ -109,9 +109,9 @@ WITH request_deltas AS (
         machine,
         controller,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time)
         END AS requests_in_interval
     FROM
         request_count
@@ -190,9 +190,9 @@ WITH request_deltas AS (
         machine,
         controller,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time)
         END AS requests_in_interval
     FROM
         request_count
@@ -650,9 +650,9 @@ WITH request_deltas AS (
         machine,
         controller,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time)
         END AS requests_in_interval
     FROM
         request_count
@@ -696,9 +696,9 @@ export const getRequestErrorRatioGapFill = (
       machine,
       controller,
       CASE 
-        WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time)
+        WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time)
         THEN value 
-        ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time)
+        ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time)
       END AS requests_in_interval
     FROM request_count
     WHERE time >= now() - INTERVAL '${interval}' 
@@ -783,9 +783,9 @@ export const getRequestPath = (services: string, interval = '1 week'): string =>
         machine,
         controller,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time) 
+            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, statuscode ORDER BY time)
+            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time)
         END AS requests_in_interval
     FROM
         request_count
