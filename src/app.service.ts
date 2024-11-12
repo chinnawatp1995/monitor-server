@@ -36,16 +36,22 @@ import {
 } from './utils/types/request.type';
 import { AlertManager } from './utils/alert/AlertManager';
 import {
+  TAlertRecord,
   TAlertRuleQuery,
   TAvgResponseTimeRecord,
+  TCreateError,
   TCreateRequest,
+  TCreateResource,
+  TCreateResponseTime,
   TErrorRanking,
   TErrorRecord,
   TMachine,
   TRecipientQuery,
+  TRecipientRecord,
   TRequestErrorRatioRecord,
   TRequestPathRecord,
   TResourceRecord,
+  TServerStatus,
   TService,
   TTotalRequestRecord,
 } from './utils/types/record.type';
@@ -116,36 +122,38 @@ export class AppService {
     }
 
     if (Object.values(responseTime).length > 0) {
-      const recs = Object.values(responseTime).map((v) => {
-        const { labels, bucketValues, sum, count } = v;
-        const { service, machine, controller, path, statusCode } = labels;
-        return {
-          service,
-          machine,
-          controller,
-          path,
-          statusCode,
-          sum,
-          count,
-          bucket_25: bucketValues['25'],
-          bucket_50: bucketValues['50'],
-          bucket_100: bucketValues['100'],
-          bucket_200: bucketValues['200'],
-          bucket_400: bucketValues['400'],
-          bucket_800: bucketValues['800'],
-          bucket_1600: bucketValues['1600'],
-          bucket_3200: bucketValues['3200'],
-          bucket_6400: bucketValues['6400'],
-          bucket_12800: bucketValues['12800'],
-        };
-      });
+      const recs: TCreateResponseTime[] = Object.values(responseTime).map(
+        (v) => {
+          const { labels, bucketValues, sum, count } = v;
+          const { service, machine, controller, path, statusCode } = labels;
+          return {
+            service,
+            machine,
+            controller,
+            path,
+            statusCode,
+            sum,
+            count,
+            bucket_25: bucketValues['25'],
+            bucket_50: bucketValues['50'],
+            bucket_100: bucketValues['100'],
+            bucket_200: bucketValues['200'],
+            bucket_400: bucketValues['400'],
+            bucket_800: bucketValues['800'],
+            bucket_1600: bucketValues['1600'],
+            bucket_3200: bucketValues['3200'],
+            bucket_6400: bucketValues['6400'],
+            bucket_12800: bucketValues['12800'],
+          };
+        },
+      );
       await this.pgClient.query({
         text: createResponseQuery(recs, new Date(time).toISOString()),
       });
     }
 
     if (Object.values(error).length > 0) {
-      const recs = Object.values(error).map((v) => {
+      const recs: TCreateError[] = Object.values(error).map((v) => {
         const { service, machine, controller, path, errorCode, errorTitle } =
           v.labels;
         return {
@@ -164,7 +172,7 @@ export class AppService {
     }
 
     if (Object.values(cpu).length > 0) {
-      const recs = Object.values(cpu).map((v) => {
+      const recs: TCreateResource[] = Object.values(cpu).map((v) => {
         const { service, machine } = v.labels;
         return {
           service,
@@ -179,7 +187,7 @@ export class AppService {
     }
 
     if (Object.values(mem).length > 0) {
-      const recs = Object.values(mem).map((v) => {
+      const recs: TCreateResource[] = Object.values(mem).map((v) => {
         const { service, machine } = v.labels;
         return {
           service,
@@ -193,7 +201,7 @@ export class AppService {
     }
 
     if (Object.values(rxNetwork).length > 0) {
-      const recs = Object.values(rxNetwork).map((v) => {
+      const recs: TCreateResource[] = Object.values(rxNetwork).map((v) => {
         const { service, machine } = v.labels;
         return {
           service,
@@ -207,7 +215,7 @@ export class AppService {
     }
 
     if (Object.values(txNetwork).length > 0) {
-      const recs = Object.values(txNetwork).map((v) => {
+      const recs: TCreateResource[] = Object.values(txNetwork).map((v) => {
         const { service, machine } = v.labels;
         return {
           service,
@@ -222,7 +230,7 @@ export class AppService {
   }
 
   async initStatus() {
-    const result = (
+    const result: { service: string; machine_id: string }[] = (
       await this.pgClient.query({
         text: `SELECT DISTINCT ON (machine_id, service) machine_id, service FROM server_status;`,
       })
@@ -246,7 +254,7 @@ export class AppService {
 
   async serverStatus() {
     setInterval(async () => {
-      const recs =
+      const recs: { machineId: string; service: string; status: boolean }[] =
         [...TRACK_STATUS.entries()].map(([k, v]) => {
           const [service, machineId] = k.split(':');
           return {
@@ -303,11 +311,12 @@ export class AppService {
   }
 
   async getCurrentServerStatus(machineIds?: string[]) {
-    return (
+    const serverStatus: TServerStatus[] = (
       await this.pgClient.query({
         text: getCurrentServerStatusQuery(machineIds),
       })
     ).rows;
+    return serverStatus;
   }
 
   async getRequestDataGapFill(filterObj: TFilterIntervalReq) {
@@ -386,7 +395,7 @@ export class AppService {
 
   async getRxNetowrkGapFillData(filter: TFilterIntervalReq) {
     const { interval, totalPoint, machines } = filter;
-    const records = (
+    const records: TResourceRecord[] = (
       await this.pgClient.query({
         text: rxNetworkGapFillQuery(interval, totalPoint, machines),
       })
@@ -487,11 +496,12 @@ export class AppService {
   }
 
   async getAlert() {
-    return (
+    const alerts: TAlertRecord[] = (
       await this.pgClient.query({
         text: getAlertQuery(),
       })
     ).rows;
+    return alerts;
   }
 
   async updateAlert(alert: TAlertRuleQuery) {
@@ -513,7 +523,7 @@ export class AppService {
   }
 
   async getRecipients(ruleId: string) {
-    return (
+    const recipients: TRecipientRecord[] = (
       await this.pgClient.query({
         text: `SELECT * FROM recipient ${
           ruleId
@@ -522,6 +532,7 @@ export class AppService {
         }`,
       })
     ).rows;
+    return recipients;
   }
 
   async deleteRule(ruleId: string) {

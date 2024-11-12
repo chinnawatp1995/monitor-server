@@ -107,3 +107,25 @@ export type TMachine = {
 };
 
 export type TErrorRanking = Record<string, number>;
+
+export type TAlertRecord = {
+  id: number;
+  name: string;
+  expression: string;
+  severity: number;
+  silence_time: string;
+  enabled: boolean;
+  message: string;
+  duration: string;
+  created_at: number;
+  updated_at: number;
+};
+
+export type TRecipientRecord = {
+  id: number;
+  app: string;
+  token: string;
+  url: string;
+  room: string;
+  name: string;
+};
