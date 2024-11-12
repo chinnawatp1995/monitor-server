@@ -38,7 +38,6 @@ model response_time {
     bucket_3200  BigInt   @default(0)
     bucket_6400  BigInt   @default(0)
     bucket_12800 BigInt   @default(0)
-    bucket_25600 BigInt   @default(0)
 
     @@unique([time, service, machine, controller, path, statusCode])
 }
