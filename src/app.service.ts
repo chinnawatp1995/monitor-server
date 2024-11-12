@@ -79,11 +79,11 @@ export class AppService {
     this.serverStatus();
     await this.initStatus();
 
-    const alertManager = new AlertManager();
+    // const alertManager = new AlertManager();
 
-    setInterval(() => {
-      alertManager.checkRules();
-    }, 5000);
+    // setInterval(() => {
+    //   alertManager.checkRules();
+    // }, 5000);
     // await testRuleParser();
   }
 
