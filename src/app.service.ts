@@ -66,10 +66,10 @@ export class AppService {
 
   async onModuleInit() {
     const pgPool = new Pool({
-      host: 'localhost',
-      user: 'postgres',
-      password: 'password',
-      database: 'monitor_server',
+      host: process.env.DB_HOST || 'localhost',
+      user: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || 'password',
+      database: process.env.DB_NAME || 'monitor_server',
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 2000,
