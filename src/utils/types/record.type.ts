@@ -3,7 +3,7 @@ export type TCreateRequest = {
   machine: string;
   controller: string;
   path: string;
-  statusCode: number;
+  statusCode: number | string;
   value: number;
 };
 
@@ -12,7 +12,7 @@ export type TCreateResponseTime = {
   machine: string;
   controller: string;
   path: string;
-  statusCode: number;
+  statusCode: number | string;
   count: number;
   sum: number;
   bucket_25: number;
@@ -34,7 +34,7 @@ export type TCreateError = {
   path: string;
   errorCode: string;
   errorTitle: string;
-  value: string;
+  value: number;
 };
 
 export type TCreateResource = {
@@ -67,3 +67,43 @@ export type TRecipientQuery = {
   url: string;
   room: string;
 };
+
+export type TBaseRecord = {
+  bucket: string;
+  value: number;
+  machine: string;
+  controller?: string;
+  service: string;
+};
+
+export type TTotalRequestRecord = TBaseRecord;
+
+export type TErrorRecord = { error_title: string } & TBaseRecord;
+
+export type TAvgResponseTimeRecord = TBaseRecord;
+
+export type TResourceRecord = TBaseRecord;
+
+export type TRequestErrorRatioRecord = {
+  bucket: string;
+  total_request: number;
+  total_error: number;
+};
+
+export type TRequestPathRecord = Record<string, number>;
+
+export type TServerStatus = {
+  machine_id: number;
+  status: boolean;
+  time: string;
+};
+
+export type TService = {
+  service: string;
+};
+
+export type TMachine = {
+  machine: string;
+};
+
+export type TErrorRanking = Record<string, number>;

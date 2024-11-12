@@ -39,7 +39,7 @@ export function fillMissingBuckets(
   let current = minTime.clone();
   while (current <= maxTime) {
     allBuckets.push(current.toISOString());
-    current = current.add(n, interval as any); // Ensure 'interval' matches a valid moment unit like 'hour', 'minute', etc.
+    current = current.add(n, interval as moment.DurationInputArg2);
   }
 
   const groupedData = groupBy(parsedData, groupByField);
@@ -360,3 +360,20 @@ export const testRuleParser = async () => {
     console.log(`eval(${a})`, eval(a));
   }
 };
+
+export function groups<T>(
+  arr: T[],
+  groupDominator: (t: T) => string,
+): Record<string, T[]> {
+  const results: Record<string, T[]> = {};
+  for (const t of arr) {
+    const d = groupDominator(t);
+    let list = results[d];
+    if (!list) {
+      list = [];
+      results[d] = list;
+    }
+    list.push(t);
+  }
+  return results;
+}

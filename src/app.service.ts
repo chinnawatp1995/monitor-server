@@ -28,7 +28,7 @@ import {
   txNetworkGapFillQuery,
   updateAlertQuery,
 } from './utils/rawSql';
-import { fillMissingBuckets } from './utils/util-functions';
+import { fillMissingBuckets, groups } from './utils/util-functions';
 import {
   TFilterIntervalReq,
   TFilterReq,
@@ -37,8 +37,17 @@ import {
 import { AlertManager } from './utils/alert/AlertManager';
 import {
   TAlertRuleQuery,
+  TAvgResponseTimeRecord,
   TCreateRequest,
+  TErrorRanking,
+  TErrorRecord,
+  TMachine,
   TRecipientQuery,
+  TRequestErrorRatioRecord,
+  TRequestPathRecord,
+  TResourceRecord,
+  TService,
+  TTotalRequestRecord,
 } from './utils/types/record.type';
 
 export const TRACK_STATUS = new Map<string, boolean[]>();
@@ -86,19 +95,18 @@ export class AppService {
 
     if (Object.values(cpu).length === 0) return;
 
-    this.updateStatus((Object.values(cpu)[0] as any).labels);
+    this.updateStatus(Object.values(cpu)[0].labels);
 
     if (Object.values(totalRequest).length > 0) {
       const recs: TCreateRequest[] = Object.values(totalRequest).map((v) => {
-        const { service, machine, controller, path, statusCode } = (v as any)
-          .labels;
+        const { service, machine, controller, path, statusCode } = v.labels;
         return {
           service,
           machine,
           controller,
           path,
           statusCode,
-          value: (v as any).value,
+          value: v.value,
         };
       });
 
@@ -109,7 +117,7 @@ export class AppService {
 
     if (Object.values(responseTime).length > 0) {
       const recs = Object.values(responseTime).map((v) => {
-        const { labels, bucketValues, sum, count } = v as any;
+        const { labels, bucketValues, sum, count } = v;
         const { service, machine, controller, path, statusCode } = labels;
         return {
           service,
@@ -138,9 +146,8 @@ export class AppService {
 
     if (Object.values(error).length > 0) {
       const recs = Object.values(error).map((v) => {
-        const { service, machine, controller, path, errorCode, errorTitle } = (
-          v as any
-        ).labels;
+        const { service, machine, controller, path, errorCode, errorTitle } =
+          v.labels;
         return {
           service,
           machine,
@@ -148,7 +155,7 @@ export class AppService {
           path,
           errorCode,
           errorTitle,
-          value: (v as any).value,
+          value: v.value,
         };
       });
       await this.pgClient.query({
@@ -158,11 +165,11 @@ export class AppService {
 
     if (Object.values(cpu).length > 0) {
       const recs = Object.values(cpu).map((v) => {
-        const { service, machine } = (v as any).labels;
+        const { service, machine } = v.labels;
         return {
           service,
           machine,
-          value: (v as any).value,
+          value: v.value,
         };
       });
 
@@ -173,11 +180,11 @@ export class AppService {
 
     if (Object.values(mem).length > 0) {
       const recs = Object.values(mem).map((v) => {
-        const { service, machine } = (v as any).labels;
+        const { service, machine } = v.labels;
         return {
           service,
           machine,
-          value: (v as any).value,
+          value: v.value,
         };
       });
       await this.pgClient.query({
@@ -187,11 +194,11 @@ export class AppService {
 
     if (Object.values(rxNetwork).length > 0) {
       const recs = Object.values(rxNetwork).map((v) => {
-        const { service, machine } = (v as any).labels;
+        const { service, machine } = v.labels;
         return {
           service,
           machine,
-          value: (v as any).value,
+          value: v.value,
         };
       });
       await this.pgClient.query({
@@ -201,11 +208,11 @@ export class AppService {
 
     if (Object.values(txNetwork).length > 0) {
       const recs = Object.values(txNetwork).map((v) => {
-        const { service, machine } = (v as any).labels;
+        const { service, machine } = v.labels;
         return {
           service,
           machine,
-          value: (v as any).value,
+          value: v.value,
         };
       });
       await this.pgClient.query({
@@ -228,7 +235,6 @@ export class AppService {
   private updateStatus(labels: Record<string, string>) {
     const { service, machine } = labels;
     const mapValue = TRACK_STATUS.get(`${service}:${machine}`) ?? [];
-    console.log(mapValue);
     mapValue.push(true);
     TRACK_STATUS.set(`${service}:${machine}`, mapValue.slice(-3));
   }
@@ -264,19 +270,22 @@ export class AppService {
   }
 
   async getService() {
-    return (
+    const records: TService[] = (
       await this.pgClient.query({
         text: `SELECT DISTINCT ON (service) service FROM cpu;`,
       })
-    ).rows.map((r) => r.service);
+    ).rows;
+
+    return records.map((r: TService) => r.service);
   }
 
   async getMachineByService(service: string) {
-    return (
+    const records: TMachine[] = (
       await this.pgClient.query({
         text: `SELECT DISTINCT ON (machine) machine FROM cpu WHERE service = '${service}';`,
       })
-    ).rows.map((r) => r.machine);
+    ).rows;
+    return records?.map((r: TMachine) => r.machine);
   }
 
   async getMachineInfo(machineId: string) {
@@ -284,11 +293,13 @@ export class AppService {
   }
 
   async getTotalRequestPath(service: string) {
-    return (
+    const records: TTotalRequestRecord[] = (
       await this.pgClient.query({
         text: getRequestPath(service),
       })
     ).rows;
+
+    return records;
   }
 
   async getCurrentServerStatus(machineIds?: string[]) {
@@ -301,17 +312,17 @@ export class AppService {
 
   async getRequestDataGapFill(filterObj: TFilterIntervalReq) {
     const { interval, totalPoint, services, machines } = filterObj;
-    const records = (
+    const records: TTotalRequestRecord[] = (
       await this.pgClient.query({
         text: getTotalRequestGapFill(interval, totalPoint, services, machines),
       })
     ).rows;
-    return (Object as any).groupBy(records, ({ machine }) => machine);
+    return groups(records, ({ machine }) => machine);
   }
 
   async getResponseAvgDataGapFill(filterObj: TFilterIntervalReq) {
     const { interval, totalPoint, services, machines } = filterObj;
-    const records = (
+    const records: TAvgResponseTimeRecord[] = (
       await this.pgClient.query({
         text: getAverageResponseTimeGapFill(
           interval,
@@ -321,7 +332,7 @@ export class AppService {
         ),
       })
     ).rows;
-    return (Object as any).groupBy(records, ({ machine }) => machine);
+    return groups(records, ({ machine }) => machine);
   }
 
   // async getResponseDistData(filterObj: TFilterReq) {
@@ -345,7 +356,7 @@ export class AppService {
   async getPathRatio(filter: TFilterReq) {
     const { startTime, endTime, services, machines, controllers } = filter;
 
-    const records = (
+    const records: TRequestPathRecord[] = (
       await this.pgClient.query({
         text: getPathRatio(startTime, endTime, services, machines, controllers),
       })
@@ -355,22 +366,22 @@ export class AppService {
 
   async getCpuGapFillData(filter: TFilterIntervalReq) {
     const { interval, totalPoint, machines } = filter;
-    const records = (
+    const records: TResourceRecord[] = (
       await this.pgClient.query({
         text: cpuGapFillQuery(interval, totalPoint, machines),
       })
     ).rows;
-    return (Object as any).groupBy(records, ({ machine }) => machine);
+    return groups(records, ({ machine }) => machine);
   }
 
   async getMemGapFillData(filter: TFilterIntervalReq) {
     const { interval, totalPoint, machines } = filter;
-    const records = (
+    const records: TResourceRecord[] = (
       await this.pgClient.query({
         text: memGapFillQuery(interval, totalPoint, machines),
       })
     ).rows;
-    return (Object as any).groupBy(records, ({ machine }) => machine);
+    return groups(records, ({ machine }) => machine);
   }
 
   async getRxNetowrkGapFillData(filter: TFilterIntervalReq) {
@@ -385,19 +396,19 @@ export class AppService {
 
   async getTxNetowrkGapFillData(filter: TFilterIntervalReq) {
     const { interval, totalPoint, machines } = filter;
-    const records = (
+    const records: TResourceRecord[] = (
       await this.pgClient.query({
         text: txNetworkGapFillQuery(interval, totalPoint, machines),
       })
     ).rows;
-    return (Object as any).groupBy(records, ({ machine }) => machine);
+    return groups(records, ({ machine }) => machine);
   }
 
-  async getErrorRate(filterObj: any) {
+  async getErrorRate(filterObj: TFilterReq) {
     const { startTime, endTime, resolution, services, machines, controllers } =
       filterObj;
     const unit = (resolution ?? '1 hour').split(' ')[1].replace('s', '');
-    const records = (
+    const records: TErrorRecord[] = (
       await this.pgClient.query({
         text: errorRate(
           startTime,
@@ -414,7 +425,7 @@ export class AppService {
 
   async getRequestErrorRatioGapFill(filterObj: TFilterIntervalReq) {
     const { interval, services, machines, controllers } = filterObj;
-    const records = (
+    const records: TRequestErrorRatioRecord[] = (
       await this.pgClient.query({
         text: getRequestErrorRatioGapFill(
           interval,
@@ -428,7 +439,7 @@ export class AppService {
   }
 
   async getErrorRanking(service: string) {
-    const records = (
+    const records: TErrorRanking[] = (
       await this.pgClient.query({
         text: errorRanking(service),
       })

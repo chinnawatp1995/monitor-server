@@ -99,7 +99,7 @@ export const getTotalRequest = (
   services?: string[],
   machineIds?: string[],
   controllers?: string[],
-) =>
+): string =>
   `
 WITH request_deltas AS (
     SELECT
@@ -180,7 +180,7 @@ export const getTotalRequestGapFill = (
   services?: string[],
   machineIds?: string[],
   controllers?: string[],
-) =>
+): string =>
   `
 WITH request_deltas AS (
     SELECT
@@ -234,7 +234,7 @@ export const errorRate = (
   services?: string[],
   machineIds?: string[],
   controllers?: string[],
-) =>
+): string =>
   `
 WITH error_deltas AS (
     SELECT
@@ -289,7 +289,7 @@ export const getErrorCountGapFill = (
   services?: string[],
   machineIds?: string[],
   controllers?: string[],
-) =>
+): string =>
   `
   WITH error_deltas AS (
       SELECT
@@ -376,7 +376,7 @@ export const getAverageResponseTime = (
   services?: string[],
   machineIds?: string[],
   controllers?: string[],
-) => `
+): string => `
 SELECT 
     time_bucket('${timeBucket}', time) AS bucket,
     AVG(sum/count) AS value,
@@ -411,7 +411,7 @@ export const getAverageResponseTimeGapFill = (
   services?: string[],
   machineIds?: string[],
   controllers?: string[],
-) => `
+): string => `
 SELECT 
     time_bucket_gapfill(INTERVAL '${interval}' / '${totalPoint}', time, now() - INTERVAL '${interval}', now()) AS bucket,
     AVG(sum/count) AS value,
@@ -445,7 +445,7 @@ export const cpuQuery = (
   end: string,
   timeBucket: string,
   machineIds?: string[],
-) => `
+): string => `
 SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS value, machine, service
 FROM cpu
 WHERE time BETWEEN '${start}' AND '${end}'
@@ -462,7 +462,7 @@ export const cpuGapFillQuery = (
   interval: string,
   totalPoint: number,
   machineIds?: string[],
-) => `
+): string => `
 SELECT time_bucket_gapfill(interval '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, MAX(value) AS value, machine, service
 FROM cpu
 WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
@@ -640,7 +640,7 @@ export const getPathRatio = (
   services?: string[],
   machineIds?: string[],
   controllers?: string[],
-) =>
+): string =>
   `
 WITH request_deltas AS (
     SELECT
@@ -687,7 +687,7 @@ export const getRequestErrorRatioGapFill = (
   services?: string[],
   machines?: string[],
   controllers?: string[],
-) => `WITH ht1 AS (
+): string => `WITH ht1 AS (
   WITH request_deltas AS (
     SELECT
       time,
@@ -774,7 +774,7 @@ FROM ht1
 INNER JOIN ht2 ON ht1.bucket = ht2.bucket
 ORDER BY bucket ASC;`;
 
-export const getRequestPath = (services: string, interval = '1 week') =>
+export const getRequestPath = (services: string, interval = '1 week'): string =>
   `WITH request_deltas AS (
     SELECT
         time,

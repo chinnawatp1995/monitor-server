@@ -1,16 +1,16 @@
 export type TCounterElement = {
-  labels: string[];
+  labels: Record<string, string>;
   value: number;
 };
 
 export type TGuageElement = {
-  labels: string[];
+  labels: Record<string, string>;
   value: number;
 };
 
 export type THistogramElement = {
-  labels: string[];
+  labels: Record<string, string>;
   sum: number;
   count: number;
-  bucket: Record<number, number>;
+  bucketValues: Record<number, number>;
 };

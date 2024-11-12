@@ -53,12 +53,6 @@ export class AppController {
     return await this.appService.getRequestDataGapFill(filter);
   }
 
-  // @Post('error')
-  // async getErrorCount(@Body() filter: TFilterReq) {
-  //   // return await this.appService.getRequestData(filter);
-  //   return await this.appService.getErrorCountGapFill(filter);
-  // }
-
   @Post('cpu-usage')
   async getCpuUsage(@Body() filter: TFilterIntervalReq) {
     return await this.appService.getCpuGapFillData(filter);
