@@ -62,20 +62,31 @@ export class AlertEvaluator {
   getDataFromRule = async (
     aggregation: string,
     metric: string,
-    service: string[],
-    machine: string[],
+    services: string[],
+    machines: string[],
     value: (string | number)[],
     duration: string,
   ) => {
+    console.log(machines, services);
     const result = await pgClient.query({
       text: this.METRIC_QUERY[metric.toLowerCase()]({
         aggregation,
-        service,
-        machine,
+        services,
+        machines,
         value,
         duration,
       }),
     });
+    console.log(
+      this.METRIC_QUERY[metric.toLowerCase()]({
+        aggregation,
+        services,
+        machines,
+        value,
+        duration,
+      }),
+    );
+    console.log(result.rows);
     return result.rows[0].value;
   };
 }
