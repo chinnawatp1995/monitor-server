@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Pool } from 'pg';
+import { Pool, PoolClient } from 'pg';
 import {
   addRecipientToAlertQuery,
   cpuGapFillQuery,
@@ -57,15 +57,15 @@ import {
 } from './utils/types/record.type';
 
 export const TRACK_STATUS = new Map<string, boolean[]>();
-export let pgClient: any;
+export let pgClient: PoolClient;
 
 @Injectable()
 export class AppService {
-  private pgClient: Pool;
+  private pgClient: PoolClient;
   // constructor() {}
 
   async onModuleInit() {
-    const pgPool = new Pool({
+    const pgPool: Pool = new Pool({
       host: process.env.DB_HOST || 'localhost',
       user: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASSWORD || 'password',
