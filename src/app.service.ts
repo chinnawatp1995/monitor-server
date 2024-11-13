@@ -176,7 +176,7 @@ export class AppService {
           bucket_12800: Number(v['12800']),
         };
       });
-      console.log(resArr);
+
       const recs: TCreateResponseTime[] = resArr.map((v) => {
         const { labels, sum, count } = v;
         const { service, machine, controller, path, statusCode } = labels;
