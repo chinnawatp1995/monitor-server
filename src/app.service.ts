@@ -99,12 +99,12 @@ export class AppService {
       txNetwork,
     } = metrics;
 
-    if (Object.values(cpu).length === 0) return;
+    if (cpu.length === 0) return;
 
-    this.updateStatus(Object.values(cpu)[0].labels);
+    this.updateStatus(cpu[0].labels);
 
-    if (Object.values(totalRequest).length > 0) {
-      const recs: TCreateRequest[] = Object.values(totalRequest).map((v) => {
+    if (totalRequest.length > 0) {
+      const recs: TCreateRequest[] = totalRequest.map((v) => {
         const { service, machine, controller, path, statusCode } = v.labels;
         return {
           service,
@@ -121,39 +121,37 @@ export class AppService {
       });
     }
 
-    if (Object.values(responseTime).length > 0) {
-      const recs: TCreateResponseTime[] = Object.values(responseTime).map(
-        (v) => {
-          const { labels, bucketValues, sum, count } = v;
-          const { service, machine, controller, path, statusCode } = labels;
-          return {
-            service,
-            machine,
-            controller,
-            path,
-            statusCode,
-            sum,
-            count,
-            bucket_25: bucketValues['25'],
-            bucket_50: bucketValues['50'],
-            bucket_100: bucketValues['100'],
-            bucket_200: bucketValues['200'],
-            bucket_400: bucketValues['400'],
-            bucket_800: bucketValues['800'],
-            bucket_1600: bucketValues['1600'],
-            bucket_3200: bucketValues['3200'],
-            bucket_6400: bucketValues['6400'],
-            bucket_12800: bucketValues['12800'],
-          };
-        },
-      );
+    if (responseTime.length > 0) {
+      const recs: TCreateResponseTime[] = responseTime.map((v) => {
+        const { labels, bucketValues, sum, count } = v;
+        const { service, machine, controller, path, statusCode } = labels;
+        return {
+          service,
+          machine,
+          controller,
+          path,
+          statusCode,
+          sum,
+          count,
+          bucket_25: bucketValues['25'],
+          bucket_50: bucketValues['50'],
+          bucket_100: bucketValues['100'],
+          bucket_200: bucketValues['200'],
+          bucket_400: bucketValues['400'],
+          bucket_800: bucketValues['800'],
+          bucket_1600: bucketValues['1600'],
+          bucket_3200: bucketValues['3200'],
+          bucket_6400: bucketValues['6400'],
+          bucket_12800: bucketValues['12800'],
+        };
+      });
       await this.pgClient.query({
         text: createResponseQuery(recs, new Date(time).toISOString()),
       });
     }
 
-    if (Object.values(error).length > 0) {
-      const recs: TCreateError[] = Object.values(error).map((v) => {
+    if (error.length > 0) {
+      const recs: TCreateError[] = error.map((v) => {
         const { service, machine, controller, path, errorCode, errorTitle } =
           v.labels;
         return {
@@ -171,8 +169,8 @@ export class AppService {
       });
     }
 
-    if (Object.values(cpu).length > 0) {
-      const recs: TCreateResource[] = Object.values(cpu).map((v) => {
+    if (cpu.length > 0) {
+      const recs: TCreateResource[] = cpu.map((v) => {
         const { service, machine } = v.labels;
         return {
           service,
@@ -186,8 +184,8 @@ export class AppService {
       });
     }
 
-    if (Object.values(mem).length > 0) {
-      const recs: TCreateResource[] = Object.values(mem).map((v) => {
+    if (mem.length > 0) {
+      const recs: TCreateResource[] = mem.map((v) => {
         const { service, machine } = v.labels;
         return {
           service,
@@ -200,8 +198,8 @@ export class AppService {
       });
     }
 
-    if (Object.values(rxNetwork).length > 0) {
-      const recs: TCreateResource[] = Object.values(rxNetwork).map((v) => {
+    if (rxNetwork.length > 0) {
+      const recs: TCreateResource[] = rxNetwork.map((v) => {
         const { service, machine } = v.labels;
         return {
           service,
@@ -214,8 +212,8 @@ export class AppService {
       });
     }
 
-    if (Object.values(txNetwork).length > 0) {
-      const recs: TCreateResource[] = Object.values(txNetwork).map((v) => {
+    if (txNetwork.length > 0) {
+      const recs: TCreateResource[] = txNetwork.map((v) => {
         const { service, machine } = v.labels;
         return {
           service,

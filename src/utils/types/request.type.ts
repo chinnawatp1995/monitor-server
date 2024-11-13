@@ -27,11 +27,11 @@ export type TFilterIntervalReq = {
 
 export type TMetricsReq = {
   time: string | number;
-  totalRequest: Record<string, TCounterElement>;
-  responseTime: Record<string, THistogramElement>;
-  error: Record<string, TCounterElement>;
-  cpu: Record<string, TGuageElement>;
-  mem: Record<string, TGuageElement>;
-  rxNetwork: Record<string, TGuageElement>;
-  txNetwork: Record<string, TGuageElement>;
+  totalRequest: TCounterElement[];
+  responseTime: THistogramElement[];
+  error: TCounterElement[];
+  cpu: TGuageElement[];
+  mem: TGuageElement[];
+  rxNetwork: TGuageElement[];
+  txNetwork: TGuageElement[];
 };
