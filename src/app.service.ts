@@ -55,6 +55,7 @@ import {
   TService,
   TTotalRequestRecord,
 } from './utils/types/record.type';
+import { TGroupedResponseTime } from './utils/types/metric.type';
 
 export const TRACK_STATUS = new Map<string, boolean[]>();
 export let pgClient: PoolClient;
@@ -122,8 +123,62 @@ export class AppService {
     }
 
     if (responseTime.length > 0) {
-      const recs: TCreateResponseTime[] = responseTime.map((v) => {
-        const { labels, bucketValues, sum, count } = v;
+      // console.log(responseTime);
+      const groupObj: TGroupedResponseTime = {};
+      responseTime.forEach((r) => {
+        const { le, service, machine, controller, path, statusCode } = r.labels;
+        const label = `${service}:${machine}:${controller}:${path}:${statusCode}`;
+        if (!groupObj[label]) {
+          groupObj[label] = {
+            sum: 0,
+            count: 0,
+            '25': 0,
+            '50': 0,
+            '100': 0,
+            '200': 0,
+            '400': 0,
+            '800': 0,
+            '1600': 0,
+            '3200': 0,
+            '6400': 0,
+            '12800': 0,
+          };
+        }
+        if (r.metricName === 'avg_response_time_bucket') {
+          groupObj[label][le] = Number(r.value);
+        } else if (r.metricName === 'avg_response_time_sum') {
+          groupObj[label].sum = r.value;
+        } else if (r.metricName === 'avg_response_time_count')
+          groupObj[label].count = r.value;
+      });
+
+      const resArr = Object.entries(groupObj).map(([k, v]) => {
+        const [service, machine, controller, path, statusCode] = k.split(':');
+        return {
+          labels: {
+            service,
+            machine,
+            controller,
+            path,
+            statusCode,
+          },
+          sum: v.sum,
+          count: v.count,
+          bucket_25: Number(v['25']),
+          bucket_50: Number(v['50']),
+          bucket_100: Number(v['100']),
+          bucket_200: Number(v['200']),
+          bucket_400: Number(v['400']),
+          bucket_800: Number(v['800']),
+          bucket_1600: Number(v['1600']),
+          bucket_3200: Number(v['3200']),
+          bucket_6400: Number(v['6400']),
+          bucket_12800: Number(v['12800']),
+        };
+      });
+      console.log(resArr);
+      const recs: TCreateResponseTime[] = resArr.map((v) => {
+        const { labels, sum, count } = v;
         const { service, machine, controller, path, statusCode } = labels;
         return {
           service,
@@ -133,16 +188,16 @@ export class AppService {
           statusCode,
           sum,
           count,
-          bucket_25: bucketValues['25'],
-          bucket_50: bucketValues['50'],
-          bucket_100: bucketValues['100'],
-          bucket_200: bucketValues['200'],
-          bucket_400: bucketValues['400'],
-          bucket_800: bucketValues['800'],
-          bucket_1600: bucketValues['1600'],
-          bucket_3200: bucketValues['3200'],
-          bucket_6400: bucketValues['6400'],
-          bucket_12800: bucketValues['12800'],
+          bucket_25: v.bucket_25,
+          bucket_50: v.bucket_50,
+          bucket_100: v.bucket_100,
+          bucket_200: v.bucket_200,
+          bucket_400: v.bucket_400,
+          bucket_800: v.bucket_800,
+          bucket_1600: v.bucket_1600,
+          bucket_3200: v.bucket_3200,
+          bucket_6400: v.bucket_6400,
+          bucket_12800: v.bucket_12800,
         };
       });
       await this.pgClient.query({
