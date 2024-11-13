@@ -463,7 +463,7 @@ export const cpuGapFillQuery = (
   totalPoint: number,
   machineIds?: string[],
 ): string => `
-SELECT time_bucket_gapfill(interval '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, MAX(value) AS value, machine, service
+SELECT time_bucket_gapfill(interval '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, AVG(value) AS value, machine, service
 FROM cpu
 WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
     ${
@@ -498,7 +498,7 @@ export const memGapFillQuery = (
   totalPoint: number,
   machineIds?: string[],
 ) => `
-SELECT time_bucket_gapfill(INTERVAL '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, MAX(value) AS value, machine, service
+SELECT time_bucket_gapfill(INTERVAL '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, AVG(value) AS value, machine, service
 FROM mem
 WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
     ${
