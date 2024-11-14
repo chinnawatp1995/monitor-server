@@ -17,6 +17,7 @@ model RequestCount {
     value      BigInt
 
     @@unique([time, service, machine, controller, path, statusCode])
+    @@index([time])
     @@map("request_count")
 }
 
@@ -41,6 +42,7 @@ model ResponseTime {
     bucket_12800 BigInt   @default(0)
 
     @@unique([time, service, machine, controller, path, statusCode])
+    @@index([time])
     @@map("response_time")
 }
 
@@ -55,6 +57,7 @@ model Error {
     value      BigInt
 
     @@unique([time, service, machine, controller, path])
+    @@index([time])
     @@map("error")
 }
 
@@ -75,6 +78,7 @@ model Mem {
     value   Float
 
     @@unique([time, service, machine])
+    @@index([time])
     @@map("mem")
 }
 
@@ -85,6 +89,7 @@ model RxNetwork {
     value   BigInt
 
     @@unique([time, service, machine])
+    @@index([time])
     @@map("rx_network")
 }
 
@@ -95,6 +100,7 @@ model TxNetwork {
     value   BigInt
 
     @@unique([time, service, machine])
+    @@index([time])
     @@map("tx_network")
 }
 
@@ -105,5 +111,6 @@ model ServerStatus {
     status    Boolean
 
     @@unique([time, service, machineId])
+    @@index([time])
     @@map("server_status")
 }
