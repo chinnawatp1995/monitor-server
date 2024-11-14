@@ -453,7 +453,7 @@ export class AppService {
         text: rxNetworkGapFillQuery(interval, totalPoint, machines),
       })
     ).rows;
-    return (Object as any).groupBy(records, ({ machine }) => machine);
+    return groups(records, ({ machine }) => machine);
   }
 
   async getTxNetowrkGapFillData(filter: TFilterIntervalReq) {
