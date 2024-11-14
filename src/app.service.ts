@@ -230,7 +230,7 @@ export class AppService {
         return {
           service,
           machine,
-          value: v.value,
+          value: v.value ?? 0,
         };
       });
 
@@ -245,7 +245,7 @@ export class AppService {
         return {
           service,
           machine,
-          value: v.value,
+          value: v.value ?? 0,
         };
       });
       await this.pgClient.query({
@@ -259,7 +259,7 @@ export class AppService {
         return {
           service,
           machine,
-          value: v.value,
+          value: v.value ?? 0,
         };
       });
       await this.pgClient.query({
@@ -273,7 +273,7 @@ export class AppService {
         return {
           service,
           machine,
-          value: v.value,
+          value: v.value ?? 0,
         };
       });
       await this.pgClient.query({
