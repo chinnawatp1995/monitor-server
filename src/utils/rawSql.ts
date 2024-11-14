@@ -379,7 +379,7 @@ export const getAverageResponseTime = (
 ): string => `
 SELECT 
     time_bucket('${timeBucket}', time) AS bucket,
-    AVG(sum/count) AS value,
+    SUM(sum) / SUM(count) AS value,
     machine,
     controller,
     service
@@ -414,7 +414,7 @@ export const getAverageResponseTimeGapFill = (
 ): string => `
 SELECT 
     time_bucket_gapfill(INTERVAL '${interval}' / '${totalPoint}', time, now() - INTERVAL '${interval}', now()) AS bucket,
-    AVG(sum/count) AS value,
+    SUM(sum) / SUM(count) AS value,
     machine,
     controller,
     service
