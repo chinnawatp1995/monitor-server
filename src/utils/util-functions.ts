@@ -1,4 +1,4 @@
-import { groupBy, keyBy } from 'lodash';
+import { keyBy } from 'lodash';
 import * as moment from 'moment';
 import axios from 'axios';
 import { cpuData } from './test-data';
@@ -42,7 +42,7 @@ export function fillMissingBuckets(
     current = current.add(n, interval as moment.DurationInputArg2);
   }
 
-  const groupedData = groupBy(parsedData, groupByField);
+  const groupedData = groups(parsedData, (obj) => String(obj[groupByField]));
   const completeData = Object.keys(groupedData).reduce((result, groupId) => {
     const groupData = groupedData[groupId];
 
