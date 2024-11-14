@@ -70,7 +70,7 @@ export class AppService {
       host: process.env.DB_HOST || 'localhost',
       user: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASSWORD || 'password',
-      database: process.env.DB_NAME || 'monitor_server',
+      database: process.env.DB_NAME || 'monitor_server_',
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 2000,
@@ -225,14 +225,16 @@ export class AppService {
     }
 
     if (cpu.length > 0) {
-      const recs: TCreateResource[] = cpu.map((v) => {
-        const { service, machine } = v.labels;
-        return {
-          service,
-          machine,
-          value: v.value ?? 0,
-        };
-      });
+      const recs: TCreateResource[] = cpu
+        .map((v) => {
+          const { service, machine } = v.labels;
+          return {
+            service,
+            machine,
+            value: v.value,
+          };
+        })
+        .filter((r) => r.value !== null && r.value !== undefined);
 
       await this.pgClient.query({
         text: createCpuQuery(recs, new Date(time).toISOString()),
@@ -240,42 +242,48 @@ export class AppService {
     }
 
     if (mem.length > 0) {
-      const recs: TCreateResource[] = mem.map((v) => {
-        const { service, machine } = v.labels;
-        return {
-          service,
-          machine,
-          value: v.value ?? 0,
-        };
-      });
+      const recs: TCreateResource[] = mem
+        .map((v) => {
+          const { service, machine } = v.labels;
+          return {
+            service,
+            machine,
+            value: v.value,
+          };
+        })
+        .filter((r) => r.value !== null && r.value !== undefined);
       await this.pgClient.query({
         text: createMemQuery(recs, new Date(time).toISOString()),
       });
     }
 
     if (rxNetwork.length > 0) {
-      const recs: TCreateResource[] = rxNetwork.map((v) => {
-        const { service, machine } = v.labels;
-        return {
-          service,
-          machine,
-          value: v.value ?? 0,
-        };
-      });
+      const recs: TCreateResource[] = rxNetwork
+        .map((v) => {
+          const { service, machine } = v.labels;
+          return {
+            service,
+            machine,
+            value: v.value,
+          };
+        })
+        .filter((r) => r.value !== null && r.value !== undefined);
       await this.pgClient.query({
         text: createRxNetworkQuery(recs, new Date(time).toISOString()),
       });
     }
 
     if (txNetwork.length > 0) {
-      const recs: TCreateResource[] = txNetwork.map((v) => {
-        const { service, machine } = v.labels;
-        return {
-          service,
-          machine,
-          value: v.value ?? 0,
-        };
-      });
+      const recs: TCreateResource[] = txNetwork
+        .map((v) => {
+          const { service, machine } = v.labels;
+          return {
+            service,
+            machine,
+            value: v.value,
+          };
+        })
+        .filter((r) => r.value !== null && r.value !== undefined);
       await this.pgClient.query({
         text: createTxNetworkQuery(recs, new Date(time).toISOString()),
       });
