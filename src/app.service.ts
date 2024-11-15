@@ -236,9 +236,11 @@ export class AppService {
         })
         .filter((r) => r.value !== null && r.value !== undefined);
 
-      await this.pgClient.query({
-        text: createCpuQuery(recs, new Date(time).toISOString()),
-      });
+      if (recs.length > 0) {
+        await this.pgClient.query({
+          text: createCpuQuery(recs, new Date(time).toISOString()),
+        });
+      }
     }
 
     if (mem.length > 0) {
@@ -252,9 +254,11 @@ export class AppService {
           };
         })
         .filter((r) => r.value !== null && r.value !== undefined);
-      await this.pgClient.query({
-        text: createMemQuery(recs, new Date(time).toISOString()),
-      });
+
+      if (recs.length > 0)
+        await this.pgClient.query({
+          text: createMemQuery(recs, new Date(time).toISOString()),
+        });
     }
 
     if (rxNetwork.length > 0) {
@@ -268,9 +272,12 @@ export class AppService {
           };
         })
         .filter((r) => r.value !== null && r.value !== undefined);
-      await this.pgClient.query({
-        text: createRxNetworkQuery(recs, new Date(time).toISOString()),
-      });
+
+      if (recs.length > 0) {
+        await this.pgClient.query({
+          text: createRxNetworkQuery(recs, new Date(time).toISOString()),
+        });
+      }
     }
 
     if (txNetwork.length > 0) {
@@ -284,9 +291,12 @@ export class AppService {
           };
         })
         .filter((r) => r.value !== null && r.value !== undefined);
-      await this.pgClient.query({
-        text: createTxNetworkQuery(recs, new Date(time).toISOString()),
-      });
+
+      if (recs.length > 0) {
+        await this.pgClient.query({
+          text: createTxNetworkQuery(recs, new Date(time).toISOString()),
+        });
+      }
     }
   }
 
