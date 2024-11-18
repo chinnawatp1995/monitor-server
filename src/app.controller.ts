@@ -131,6 +131,11 @@ export class AppController {
     return await this.appService.removeRecipientFromGroup(body);
   }
 
+  @Get('alert-rules')
+  async getRules() {
+    return await this.appService.getRules();
+  }
+
   @Post('get-alert-history')
   async getAlertHistory(@Body() body: any) {
     debugger;
@@ -196,5 +201,15 @@ export class AppController {
   @Get('alert-type')
   async getAlertType() {
     return this.appService.getAlertType();
+  }
+
+  @Get('groups')
+  async getGroups() {
+    return await this.appService.getGroup();
+  }
+
+  @Post('remove-group-from-rule')
+  async removeGroupFromRule(@Body() body: any) {
+    return await this.appService.removeGroupFromRule(body);
   }
 }

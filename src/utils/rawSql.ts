@@ -1,12 +1,10 @@
 import { group } from 'console';
 import {
-  TAlertRuleQuery,
   TCreateError,
   TCreateRequest,
   TCreateResource,
   TCreateResponseTime,
   TCreateServerStatus,
-  TRecipientQuery,
 } from './types/record.type';
 
 export const createRequestQuery = (recs: TCreateRequest[], time: string) => {
@@ -812,7 +810,7 @@ export const getAvgResourceInterval = (
   WHERE time >= now() - INTERVAL '${interval}'
    ${
      (services ?? []).length > 0
-       ? `AND machines in (${services.map((m) => `'${m}'`)})`
+       ? `AND service in (${services.map((m) => `'${m}'`)})`
        : ''
    }
   GROUP BY machine
@@ -856,6 +854,12 @@ export const createGroupQuery = (group: any) =>
 export const createRuleGroupQuery = (ruleId: number, groupId: number) =>
   `INSERT INTO rule_group (rule_id, group_id) VALUES (${ruleId}, ${groupId})`;
 
+export const addGroupToRuleQuery = (ruleId: number, groupIds: number[]) => {
+  const query = `INSERT INTO rule_group (rule_id, group_id ) VALUES `;
+  const values = `${groupIds.map((g) => `(${ruleId}, ${g})`).join(',')}`;
+  return `${query}${values}`;
+};
+
 export const deleteRuleGroupQuery = (ruleId: number, groupId: number) =>
   `DELETE FROM rule_group WHERE rule_id = ${ruleId} AND group_id = ${groupId}`;
 
@@ -894,6 +898,12 @@ export const deleteRuleGroupByRule = (ruleId: number) =>
 
 export const deleteRuleGroupByGroup = (groupId: number) =>
   `DELETE FROM rule_group WHERE group_id = ${groupId}`;
+
+export const removeGroupFromRule = (ruleId: number, groupIds: number[]) =>
+  `
+  DELETE FROM rule_group WHERE 
+  ruleId = ${ruleId} AND group_id in (${groupIds.join(',')})
+`;
 
 export const removeRecipientFromGroupQuery = (recipient: number) =>
   `
@@ -977,8 +987,19 @@ export const getRecipientFromRule = (ruleId: number) =>
   SELECT * FROM rule_recipients
 `;
 
-export const getRecipients = (recipients: number[]) =>
+export const getRecipientsQuery = (recipients: number[]) =>
   `
   SELECT * FROM recipient
   WHERE id in (${recipients.join(',')})
 `;
+
+export const getRulesQuery = () => 'SELECT * FROM alert_rule';
+
+export const getGroupFromRuleQuery = (ruleId: number) =>
+  `
+  SELECT g.id as id , g.name as name ,  g.recipients as recipients
+  FROM rule_group as rg INNER JOIN recipient_group as g ON rg.group_id = g.id
+  WHERE rg.rule_id = ${ruleId}
+`;
+
+export const getGroupQuery = () => `SELECT * FROM recipient_group`;

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Pool, PoolClient } from 'pg';
 import {
+  addGroupToRuleQuery,
   cpuGapFillQuery,
   createAlertNoThresholdQuery,
   createAlertQuery,
@@ -24,12 +25,16 @@ import {
   errorRate,
   getAverageResponseTimeGapFill,
   getCurrentServerStatusQuery,
+  getGroupFromRuleQuery,
+  getGroupQuery,
   getPathRatio,
   getRecipientsFromGroup,
   getRequestErrorRatioGapFill,
   getRequestPath,
+  getRulesQuery,
   getTotalRequestGapFill,
   memGapFillQuery,
+  removeGroupFromRule,
   removeRecipientFromGroupQuery,
   rxNetworkGapFillQuery,
   serverTimeline,
@@ -661,9 +666,9 @@ export class AppService {
     });
   }
 
-  async addGroupToRule(param: { ruleId: number; groupId: number }) {
+  async addGroupToRule(param: { ruleId: number; groupIds: number[] }) {
     await this.pgClient.query({
-      text: createRuleGroupQuery(param.ruleId, param.groupId),
+      text: addGroupToRuleQuery(param.ruleId, param.groupIds),
     });
   }
 
@@ -762,5 +767,39 @@ export class AppService {
 
   async getAlertType() {
     return POSSIBLE_RULES;
+  }
+
+  async getRules() {
+    const rules = (
+      await this.pgClient.query({
+        text: getRulesQuery(),
+      })
+    ).rows;
+
+    for (const rule of rules) {
+      const group = (
+        await this.pgClient.query({
+          text: getGroupFromRuleQuery(rule.id),
+        })
+      ).rows;
+
+      rule.groups = group;
+    }
+
+    return rules;
+  }
+
+  async getGroup() {
+    return (
+      await this.pgClient.query({
+        text: getGroupQuery(),
+      })
+    ).rows;
+  }
+
+  async removeGroupFromRule(param: any) {
+    await this.pgClient.query({
+      text: removeGroupFromRule(param.ruleId, param.groupIds),
+    });
   }
 }

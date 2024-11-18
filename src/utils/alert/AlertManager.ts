@@ -8,7 +8,7 @@ import {
   getErrorRateInterval,
   getNotifyHistoryQuery,
   getRecipientFromRule,
-  getRecipients,
+  getRecipientsQuery,
   serverDown,
 } from '../rawSql';
 import { POSSIBLE_RULES } from './rule';
@@ -138,7 +138,7 @@ export class AlertManager {
       return [];
     }
     const recipientDetail = await pgClient.query({
-      text: getRecipients([...recipientSet]),
+      text: getRecipientsQuery([...recipientSet]),
     });
 
     return recipientDetail.rows;

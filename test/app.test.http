@@ -302,3 +302,15 @@ Content-Type: {{contentType}}
 GET {{baseUrl}}/alert-type
 Content-Type: {{contentType}}
 
+
+
+###
+# @name get-rules
+GET {{baseUrl}}/alert-rules
+Content-Type: {{contentType}}
+
+
+###
+# @name get-groups
+GET {{baseUrl}}/groups
+Content-Type: {{contentType}}
