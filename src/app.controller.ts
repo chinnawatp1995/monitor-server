@@ -192,4 +192,9 @@ export class AppController {
   async addGroupToRule(@Body() body: any) {
     return this.appService.addGroupToRule(body);
   }
+
+  @Get('alert-type')
+  async getAlertType() {
+    return this.appService.getAlertType();
+  }
 }

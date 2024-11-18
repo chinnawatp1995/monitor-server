@@ -65,7 +65,7 @@ import {
   TTotalRequestRecord,
 } from './utils/types/record.type';
 import { TGroupedResponseTime } from './utils/types/metric.type';
-import { union } from 'lodash';
+import { POSSIBLE_RULES } from './utils/alert/rule';
 
 export const TRACK_STATUS = new Map<string, boolean[]>();
 export let pgClient: PoolClient;
@@ -758,5 +758,9 @@ export class AppService {
     await this.pgClient.query({
       text: deleteRecipientQuery(recipient),
     });
+  }
+
+  async getAlertType() {
+    return POSSIBLE_RULES;
   }
 }

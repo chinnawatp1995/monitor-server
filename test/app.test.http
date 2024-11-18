@@ -295,3 +295,10 @@ Content-Type: {{contentType}}
     "ruleId": 1,
     "groupId": 1
 }
+
+
+###
+# @name alert-type
+GET {{baseUrl}}/alert-type
+Content-Type: {{contentType}}
+
