@@ -96,28 +96,27 @@ export class AlertManager {
   async getData(rule: any) {
     switch (rule.type) {
       case POSSIBLE_RULES.HIGH_CPU:
-        console.log('aaa');
         return (
           await pgClient.query({
-            text: getAvgResourceInterval('cpu', rule.services, rule.duration),
+            text: getAvgResourceInterval('cpu', rule.service, rule.duration),
           })
         ).rows;
       case POSSIBLE_RULES.HIGH_MEM:
         return (
           await pgClient.query({
-            text: getAvgResourceInterval('mem', rule.services, rule.duration),
+            text: getAvgResourceInterval('mem', rule.service, rule.duration),
           })
         ).rows;
       case POSSIBLE_RULES.SERVER_DOWN:
         return (
           await pgClient.query({
-            text: serverDown(rule.duration, rule.services),
+            text: serverDown(rule.duration, rule.service),
           })
         ).rows;
       case POSSIBLE_RULES.ERROR_RATE:
         return (
           await pgClient.query({
-            text: getErrorRateInterval(rule.duration, rule.services),
+            text: getErrorRateInterval(rule.duration, rule.service),
           })
         ).rows;
     }
@@ -128,9 +127,13 @@ export class AlertManager {
       await pgClient.query({
         text: getRecipientFromRule(ruleId),
       })
-    ).rows;
+    ).rows.map((r) => r.r_id);
+
     const recipientSet = new Set(recipients.flat());
 
+    if ([...recipientSet].length === 0) {
+      return [];
+    }
     const recipientDetail = await pgClient.query({
       text: getRecipients([...recipientSet]),
     });
@@ -142,7 +145,7 @@ export class AlertManager {
     const recipients = await this.getRuleRecipient(ruleId);
     for (const recipient of recipients) {
       const { id, name, config } = recipient;
-      const { app, url, room, token } = JSON.parse(config);
+      const { app, url, room, token } = config;
 
       await sendTelegram(url, token, room, message);
     }

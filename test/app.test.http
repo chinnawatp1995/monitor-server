@@ -181,10 +181,10 @@ Content-Type: {{contentType}}
 {
     "name": "server down",
     "type": "server_down",
-    "duration": "1 hour",
+    "duration": "1 minute",
     "message": "${machine} is down!!",
     "silence_time": "1 day",
-    "services": ["mutual-fund"]
+    "services": ["aa-backend"]
 }
 
 ###
