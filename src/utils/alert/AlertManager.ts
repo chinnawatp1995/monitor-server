@@ -34,8 +34,10 @@ export class AlertManager {
         }
       } else {
         const rows = await this.getData(rule);
+        // console.log(rows);
         for (const row of rows) {
-          if (row.value >= rule.threshold) {
+          if (Number(row.value) >= rule.threshold) {
+            // console.log('pass threshold');
             machines.push(row.machine);
             isPassThreshold = true;
           }
@@ -114,6 +116,7 @@ export class AlertManager {
           })
         ).rows;
       case POSSIBLE_RULES.ERROR_RATE:
+        // console.log(getErrorRateInterval(rule.duration, rule.service));
         return (
           await pgClient.query({
             text: getErrorRateInterval(rule.duration, rule.service),

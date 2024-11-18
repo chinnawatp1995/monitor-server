@@ -913,6 +913,7 @@ export const getEnabledRulesQuery = () =>
 
 export const getErrorRateInterval = (interval: string, services: string[]) =>
   `
+WITH ht1 AS (
   WITH request_deltas AS (
     SELECT
       service,
@@ -962,10 +963,9 @@ ht2 AS (
 )
 SELECT
   ht1.machine,
-  ht2.value/ht1.value as value
+  (ht2.value/ht1.value) * 100 as value
 FROM ht1
-INNER JOIN ht2 ON ht1.bucket = ht2.bucket
-ORDER BY bucket ASC;`;
+INNER JOIN ht2 ON ht1.machine = ht2.machine;`;
 
 export const getRecipientFromRule = (ruleId: number) =>
   `

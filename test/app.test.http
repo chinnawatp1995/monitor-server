@@ -179,12 +179,12 @@ POST {{baseUrl}}/create-alert
 Content-Type: {{contentType}}
 
 {
-    "name": "server down",
-    "type": "server_down",
-    "duration": "1 minute",
-    "message": "${machine} is down!!",
+    "name": "high error rate",
+    "type": "error_rate",
+    "duration": "10 minute",
+    "message": "${machine} : error rate is high",
     "silence_time": "1 day",
-    "services": ["aa-backend"]
+    "services": ["liberator-api"]
 }
 
 ###
