@@ -1,3 +1,4 @@
+import { group } from 'console';
 import {
   TAlertRuleQuery,
   TCreateError,
@@ -602,37 +603,37 @@ export const serverTimeline = (
   `GROUP BY time, machine_id, status ` +
   `ORDER BY time, machine_id `;
 
-export const createAlertQuery = (alert: TAlertRuleQuery) =>
-  `INSERT INTO alert_rule(name, expression, duration, severity, silence_time, message) ` +
-  `VALUES ('${alert.name}', E'${alert.expression.replace(/'/g, "\\'")}', '${
-    alert.duration
-  }', '${alert.severity}', '${alert.silence_time}', '${alert.message}')`;
+// export const createAlertQuery = (alert: TAlertRuleQuery) =>
+//   `INSERT INTO alert_rule(name, expression, duration, severity, silence_time, message) ` +
+//   `VALUES ('${alert.name}', E'${alert.expression.replace(/'/g, "\\'")}', '${
+//     alert.duration
+//   }', '${alert.severity}', '${alert.silence_time}', '${alert.message}')`;
 
-export const createRecipientQuery = (recipient: TRecipientQuery) =>
-  `INSERT INTO recipient(name, app, token, url, room) ` +
-  `VALUES ('${recipient.name}', '${recipient.app}', '${recipient.token}', '${recipient.url}', '${recipient.room}')`;
+// export const createRecipientQuery = (recipient: TRecipientQuery) =>
+//   `INSERT INTO recipient(name, app, token, url, room) ` +
+//   `VALUES ('${recipient.name}', '${recipient.app}', '${recipient.token}', '${recipient.url}', '${recipient.room}')`;
 
-export const getAlertRecipientsQuery = (ruleId: string) =>
-  `SELECT * FROM alert_recipient WHERE rule_id = ${ruleId}`;
+// export const getAlertRecipientsQuery = (ruleId: string) =>
+//   `SELECT * FROM alert_recipient WHERE rule_id = ${ruleId}`;
 
-export const addRecipientToAlertQuery = (
-  ruleId: string,
-  recipientIds: string[],
-) =>
-  `INSERT INTO alert_recipient(rule_id, recipient_id) VALUES ${recipientIds
-    .map((r) => `('${ruleId}', '${r}')`)
-    .join(',')}`;
+// export const addRecipientToAlertQuery = (
+//   ruleId: string,
+//   recipientIds: string[],
+// ) =>
+//   `INSERT INTO alert_recipient(rule_id, recipient_id) VALUES ${recipientIds
+//     .map((r) => `('${ruleId}', '${r}')`)
+//     .join(',')}`;
 
-export const getAlertQuery = () => `SELECT * FROM alert_rule`;
+// export const getAlertQuery = () => `SELECT * FROM alert_rule`;
 
-export const updateAlertQuery = (alert: TAlertRuleQuery) =>
-  `UPDATE alert_rule SET name = '${
-    alert.name
-  }', expression = E'${alert.expression.replace(/'/g, "\\'")}', duration = '${
-    alert.duration
-  }', severity = '${alert.severity}', silence_time = '${
-    alert.silence_time
-  }', message = '${alert.message}' WHERE id = ${alert.id}`;
+// export const updateAlertQuery = (alert: TAlertRuleQuery) =>
+//   `UPDATE alert_rule SET name = '${
+//     alert.name
+//   }', expression = E'${alert.expression.replace(/'/g, "\\'")}', duration = '${
+//     alert.duration
+//   }', severity = '${alert.severity}', silence_time = '${
+//     alert.silence_time
+//   }', message = '${alert.message}' WHERE id = ${alert.id}`;
 
 export const getPathRatio = (
   start: string,
@@ -799,4 +800,185 @@ export const getRequestPath = (services: string, interval = '1 week'): string =>
     request_deltas
   GROUP BY 
     path
+`;
+
+export const getAvgResourceInterval = (
+  table: string,
+  services: string[],
+  interval: string,
+) => `
+  SELECT AVG(value) as value , machine
+  FROM ${table}
+  WHERE time >= now() - INTERVAL '${interval}'
+   ${
+     (services ?? []).length > 0
+       ? `AND machines in (${services.map((m) => `'${m}'`)})`
+       : ''
+   }
+  GROUP BY machine
+`;
+
+export const serverDown = (interval: string, services: string[]) =>
+  `
+  SELECT status, machine_id as machine FROM server_status
+  WHERE time >= now() - INTERVAL '${interval}'
+  ${
+    (services ?? []).length > 0
+      ? `AND service in (${services.map((m) => `'${m}'`)})`
+      : ''
+  }
+`;
+
+export const createAlertQuery = (rule: any) =>
+  `INSERT INTO alert_rule (name, type, threshold, service, enable, duration, silence_time, message ) 
+   VALUES ('${rule.name}', '${rule.type}', ${rule.threshold}, '{${rule.services
+    .map((service) => service)
+    .join(',')}}', true, '${rule.duration}', '${rule.silence_time}', '${
+    rule.message
+  }');`;
+
+export const createAlertNoThresholdQuery = (rule: any) =>
+  `INSERT INTO alert_rule (name, type, service, enable, duration, silence_time, message ) 
+     VALUES ('${rule.name}', '${rule.type}',  '{${rule.services
+    .map((service) => service)
+    .join(',')}}', true, '${rule.duration}', '${rule.silence_time}', '${
+    rule.message
+  }');`;
+
+export const createRecipientQuery = (recipient: any) =>
+  `INSERT INTO recipient (name, config) VALUES ('${recipient.name}', '${recipient.detail}') `;
+
+export const createGroupQuery = (group: any) =>
+  `INSERT INTO recipient_group (name, recipients) VALUES ('${
+    group.name
+  }', '{${group.recipients.map((g) => g).join(',')}}')`;
+
+export const createRuleGroupQuery = (ruleId: number, groupId: number) =>
+  `INSERT INTO rule_group (rule_id, group_id) VALUES (${ruleId}, ${groupId})`;
+
+export const deleteRuleGroupQuery = (ruleId: number, groupId: number) =>
+  `DELETE FROM rule_group WHERE rule_id = ${ruleId} AND group_id = ${groupId}`;
+
+export const updateRecipientToGroupQuery = (
+  recipients: number[],
+  groupId: number,
+) =>
+  `UPDATE  recipient_group
+   SET recipients = '{${recipients.map((r) => r).join(',')}}'
+   WHERE id = ${groupId}
+`;
+
+export const getRecipientsFromGroup = (groupId: number) =>
+  `SELECT recipients
+   FROM recipient_group
+   WHERE id = ${groupId}
+`;
+
+export const updateRuleStatusQuery = (ruleId: number, isEnabled: boolean) =>
+  `UPDATE alert_rule
+   SET enable = ${isEnabled}
+   WHERE id = ${ruleId}
+`;
+
+export const deleteRuleQuery = (ruleId: number) =>
+  `DELETE FROM alert_rule WHERE id = ${ruleId}`;
+
+export const deleteRecipientQuery = (recipientId: number) =>
+  `DELETE FROM recipient WHERE id = ${recipientId}`;
+
+export const deleteGroupQuery = (groupId: number) =>
+  `DELETE FROM recipient_group WHERE id = ${groupId}`;
+
+export const deleteRuleGroupByRule = (ruleId: number) =>
+  `DELETE FROM rule_group WHERE rule_id = ${ruleId}`;
+
+export const deleteRuleGroupByGroup = (groupId: number) =>
+  `DELETE FROM rule_group WHERE group_id = ${groupId}`;
+
+export const removeRecipientFromGroupQuery = (recipient: number) =>
+  `
+  SELECT ARRAY_REMOVE(recipients, ${recipient})
+  FROM recipient_group
+  WHERE ${recipient} = ANY(recipients)
+`;
+
+export const getNotifyHistoryQuery = (ruleId: number, duration: string) =>
+  `SELECT * FROM notify_history WHERE rule_id = '${ruleId}' AND time >= now() - interval '${duration}'`;
+
+export const createNotifyHistoryQuery = (ruleId: number) =>
+  `INSERT INTO notify_history(rule_id) VALUES (${ruleId})`;
+
+export const getEnabledRulesQuery = () =>
+  `SELECT * FROM alert_rule WHERE enable = true`;
+
+export const getErrorRateInterval = (interval: string, services: string[]) =>
+  `
+  WITH request_deltas AS (
+    SELECT
+      service,
+      machine,
+      CASE 
+        WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time)
+        THEN value 
+        ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time)
+      END AS requests_in_interval
+    FROM request_count
+    WHERE time >= now() - INTERVAL '${interval}' 
+     ${
+       (services ?? []).length > 0
+         ? `AND service IN  ( ${services.map((s) => `'${s}'`).join(',')})`
+         : ''
+     }
+  )
+  SELECT
+    SUM(requests_in_interval) AS value,
+    machine
+  FROM request_deltas
+  GROUP BY machine
+),
+ht2 AS (
+  WITH error_deltas AS (
+    SELECT
+      service,
+      machine,
+      CASE 
+        WHEN value < LAG(value) OVER (PARTITION BY path, service, machine, controller, error_code, error_title ORDER BY time) 
+        THEN value 
+        ELSE value - LAG(value) OVER (PARTITION BY path, service, machine, controller, error_code, error_title ORDER BY time) 
+      END AS errors_in_interval
+    FROM error
+    WHERE time >= now() - INTERVAL '${interval}' 
+     ${
+       (services ?? []).length > 0
+         ? `AND service IN  ( ${services.map((s) => `'${s}'`).join(',')})`
+         : ''
+     }
+  )
+  SELECT
+    SUM(errors_in_interval) AS value,
+    machine
+  FROM error_deltas
+  GROUP BY machine
+)
+SELECT
+  ht1.machine,
+  ht2.value/ht1.value as value
+FROM ht1
+INNER JOIN ht2 ON ht1.bucket = ht2.bucket
+ORDER BY bucket ASC;`;
+
+export const getRecipientFromRule = (ruleId: number) =>
+  `
+  WITH rule_recipients AS (
+    SELECT g.recipients AS r_id
+    FROM recipient_group AS g INNER JOIN rule_group AS r ON g.id = r.group_id
+    WHERE r.rule_id = ${ruleId}
+  )
+  SELECT * FROM rule_recipients
+`;
+
+export const getRecipients = (recipients: number[]) =>
+  `
+  SELECT * FROM recipient
+  WHERE id in (${recipients.join(',')})
 `;

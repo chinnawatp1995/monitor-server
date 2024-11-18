@@ -1,80 +1,150 @@
 import { pgClient } from 'src/app.service';
-import { AlertEvaluator } from './AlertEvaluator';
-import { sendTelegram } from '../util-functions';
-
-export const EXISTING_ALERT_RULE = [];
+// import { AlertEvaluator } from './AlertEvaluator';
+import { groups, sendTelegram } from '../util-functions';
+import {
+  createNotifyHistoryQuery,
+  getAvgResourceInterval,
+  getEnabledRulesQuery,
+  getErrorRateInterval,
+  getNotifyHistoryQuery,
+  getRecipientFromRule,
+  getRecipients,
+  serverDown,
+} from '../rawSql';
+import { POSSIBLE_RULES } from './rule';
 
 export class AlertManager {
-  private evaluator = new AlertEvaluator();
+  // private evaluator = new AlertEvaluator();
 
   async checkRules() {
     const rules: any = await this.getEnabledRules();
-    for (const rule of rules) {
-      try {
-        const { isTriggered } = await this.evaluator.evaluateRule(rule);
 
-        if (isTriggered) {
-          await this.createAlert(rule);
+    for (const rule of rules) {
+      let isPassThreshold = false;
+      const machines = [];
+      if (rule.type === POSSIBLE_RULES.SERVER_DOWN) {
+        const rows = await this.getData(rule);
+        const groupByMachine = groups(rows, ({ machine }) => machine);
+        for (const [k, v] of Object.entries(groupByMachine)) {
+          const up = v.find((e) => e.status === true);
+          if (up === undefined) {
+            machines.push(k);
+            isPassThreshold = true;
+          }
         }
-      } catch (error) {
-        console.error(`Error processing rule ${rule.name}:`, error);
+      } else {
+        const rows = await this.getData(rule);
+        for (const row of rows) {
+          if (row.value >= rule.threshold) {
+            machines.push(row.machine);
+            isPassThreshold = true;
+          }
+        }
+      }
+      if (isPassThreshold) {
+        await this.createAlert(rule, machines);
       }
     }
   }
 
   async getEnabledRules() {
-    const result = await pgClient.query(
-      `SELECT * FROM alert_rule WHERE enabled = true`,
-    );
+    const result = await pgClient.query({
+      text: getEnabledRulesQuery(),
+    });
     return result.rows;
   }
 
-  private async createAlert(rule: any) {
-    const existingAlert: any = EXISTING_ALERT_RULE.find(
-      (id) => id === (rule as any).id,
-    );
-    if (existingAlert) {
-      EXISTING_ALERT_RULE.push((rule as any).id);
-      return;
-    }
+  private async createAlert(rule: any, param: string[]) {
+    const notifies = await this.getNotifyHistory(rule.id, rule.silence_time);
 
-    const alerts = await this.getAlertHistory(rule.id, rule.silence_time);
-
-    if (alerts.length > 0) {
+    if (notifies.length > 0) {
       // Early return when already alert within defined time window
       return;
     }
 
-    await this.saveAlert(rule.id);
-
-    // await this.notifier.notify({
-    //   severity: rule.severity,
-    //   message: `Alert: ${rule.name} - ${rule.service}`,
-    //   details: {
-    //     rule,
-    //     currentValue: metrics[metrics.length - 1].value,
-    //     threshold: rule.threshold,
-    //   },
-    // });
-    sendTelegram(
-      process.env.TELEGRAM_URL ?? 'https://api.telegram.org/bot',
-      process.env.TELEGRAM_TOKEN ??
-        '7731705891:AAEg9pvLFjTAlnUvzhhN2QpmgImIm14FUpM',
-      process.env.TELEGRAM_CHAT_ID ?? '-4565250427',
-      rule.message,
+    const notifyMessage = rule.message.replace(
+      /\$\{machine\}/gi,
+      param.join(','),
     );
+
+    // sendTelegram(
+    //   process.env.TELEGRAM_URL ?? 'https://api.telegram.org/bot',
+    //   process.env.TELEGRAM_TOKEN ??
+    //     '7731705891:AAEg9pvLFjTAlnUvzhhN2QpmgImIm14FUpM',
+    //   process.env.TELEGRAM_CHAT_ID ?? '-4565250427',
+    //   notifyMessage,
+    // );
+
+    await this.notifyRecipients(rule.id, notifyMessage);
+
+    await this.saveAlert(rule.id);
   }
 
-  async saveAlert(ruleId: string | number) {
+  async saveAlert(ruleId: number) {
     await pgClient.query({
-      text: `INSERT INTO alert_history(rule_id) VALUES ('${ruleId}')`,
+      text: createNotifyHistoryQuery(ruleId),
     });
   }
 
-  async getAlertHistory(ruleId: string | number, duration: string) {
+  async getNotifyHistory(ruleId: number | number, duration: string) {
     const alerts = await pgClient.query({
-      text: `SELECT * FROM alert_history WHERE rule_id = '${ruleId}' AND time >= now() - interval '${duration}'`,
+      text: getNotifyHistoryQuery(ruleId, duration),
     });
     return alerts.rows;
+  }
+
+  async getData(rule: any) {
+    switch (rule.type) {
+      case POSSIBLE_RULES.HIGH_CPU:
+        console.log('aaa');
+        return (
+          await pgClient.query({
+            text: getAvgResourceInterval('cpu', rule.services, rule.duration),
+          })
+        ).rows;
+      case POSSIBLE_RULES.HIGH_MEM:
+        return (
+          await pgClient.query({
+            text: getAvgResourceInterval('mem', rule.services, rule.duration),
+          })
+        ).rows;
+      case POSSIBLE_RULES.SERVER_DOWN:
+        return (
+          await pgClient.query({
+            text: serverDown(rule.duration, rule.services),
+          })
+        ).rows;
+      case POSSIBLE_RULES.ERROR_RATE:
+        return (
+          await pgClient.query({
+            text: getErrorRateInterval(rule.duration, rule.services),
+          })
+        ).rows;
+    }
+  }
+
+  async getRuleRecipient(ruleId: number) {
+    const recipients = (
+      await pgClient.query({
+        text: getRecipientFromRule(ruleId),
+      })
+    ).rows;
+    const recipientSet = new Set(recipients.flat());
+
+    const recipientDetail = await pgClient.query({
+      text: getRecipients([...recipientSet]),
+    });
+
+    return recipientDetail.rows;
+  }
+
+  async notifyRecipients(ruleId: number, message: string, param?: string) {
+    const recipients = await this.getRuleRecipient(ruleId);
+    for (const recipient of recipients) {
+      const { id, name, config } = recipient;
+      const { app, url, room, token } = JSON.parse(config);
+
+      await sendTelegram(url, token, room, message);
+    }
   }
 }

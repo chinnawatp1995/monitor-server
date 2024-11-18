@@ -1,32 +1,41 @@
 import { Injectable } from '@nestjs/common';
 import { Pool, PoolClient } from 'pg';
 import {
-  addRecipientToAlertQuery,
   cpuGapFillQuery,
+  createAlertNoThresholdQuery,
   createAlertQuery,
   createCpuQuery,
   createErrorQuery,
+  createGroupQuery,
   createMemQuery,
   createRecipientQuery,
   createRequestQuery,
   createResponseQuery,
+  createRuleGroupQuery,
   createRxNetworkQuery,
   createServerStatus,
   createTxNetworkQuery,
+  deleteGroupQuery,
+  deleteRecipientQuery,
+  deleteRuleGroupByGroup,
+  deleteRuleGroupByRule,
+  deleteRuleQuery,
   errorRanking,
   errorRate,
-  getAlertQuery,
   getAverageResponseTimeGapFill,
   getCurrentServerStatusQuery,
   getPathRatio,
+  getRecipientsFromGroup,
   getRequestErrorRatioGapFill,
   getRequestPath,
   getTotalRequestGapFill,
   memGapFillQuery,
+  removeRecipientFromGroupQuery,
   rxNetworkGapFillQuery,
   serverTimeline,
   txNetworkGapFillQuery,
-  updateAlertQuery,
+  updateRecipientToGroupQuery,
+  updateRuleStatusQuery,
 } from './utils/rawSql';
 import { fillMissingBuckets, groups } from './utils/util-functions';
 import {
@@ -56,6 +65,7 @@ import {
   TTotalRequestRecord,
 } from './utils/types/record.type';
 import { TGroupedResponseTime } from './utils/types/metric.type';
+import { union } from 'lodash';
 
 export const TRACK_STATUS = new Map<string, boolean[]>();
 export let pgClient: PoolClient;
@@ -80,11 +90,11 @@ export class AppService {
     this.serverStatus();
     await this.initStatus();
 
-    // const alertManager = new AlertManager();
+    const alertManager = new AlertManager();
 
-    // setInterval(() => {
-    //   alertManager.checkRules();
-    // }, 5000);
+    setInterval(() => {
+      alertManager.checkRules();
+    }, 5000);
     // await testRuleParser();
   }
 
@@ -537,90 +547,216 @@ export class AppService {
     return fillMissingBuckets(records, 'time', 'status', 'machine_id');
   }
 
-  async createAlert(alert: TAlertRuleQuery) {
-    try {
+  // async createAlert(alert: TAlertRuleQuery) {
+  //   try {
+  //     await this.pgClient.query({
+  //       text: createAlertQuery(alert),
+  //     });
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  //   return {
+  //     success: true,
+  //   };
+  // }
+
+  // async createRecipient(recipient: TRecipientQuery) {
+  //   await this.pgClient.query({
+  //     text: createRecipientQuery(recipient),
+  //   });
+  //   return {};
+  // }
+
+  // async addRecipientToAlert(params: {
+  //   ruleId: string;
+  //   recipientIds: string[];
+  // }) {
+  //   await this.pgClient.query({
+  //     text: addRecipientToAlertQuery(params.ruleId, params.recipientIds),
+  //   });
+  // }
+
+  // async getAlert() {
+  //   const alerts: TAlertRecord[] = (
+  //     await this.pgClient.query({
+  //       text: getAlertQuery(),
+  //     })
+  //   ).rows;
+  //   return alerts;
+  // }
+
+  // async updateAlert(alert: TAlertRuleQuery) {
+  //   await this.pgClient.query({
+  //     text: updateAlertQuery(alert),
+  //   });
+  // }
+
+  // async enableRule(ruleId: string) {
+  //   await this.pgClient.query({
+  //     text: `UPDATE alert_rule SET enabled = true WHERE id = ${ruleId}`,
+  //   });
+  // }
+
+  // async disableRule(ruleId: string) {
+  //   await this.pgClient.query({
+  //     text: `UPDATE alert_rule SET enabled = false WHERE id = ${ruleId}`,
+  //   });
+  // }
+
+  // async getRecipients(ruleId: string) {
+  //   const recipients: TRecipientRecord[] = (
+  //     await this.pgClient.query({
+  //       text: `SELECT * FROM recipient ${
+  //         ruleId
+  //           ? `WHERE id IN (SELECT alert_recipient.recipient_id FROM alert_recipient WHERE alert_recipient.rule_id = ${ruleId})`
+  //           : ''
+  //       }`,
+  //     })
+  //   ).rows;
+  //   return recipients;
+  // }
+
+  // async deleteRule(ruleId: string) {
+  //   await this.pgClient.query({
+  //     text: `DELETE FROM alert_rule WHERE id = ${ruleId}`,
+  //   });
+  // }
+
+  // async removeRecipientFromRule(ruleId: string, recipientId: string) {
+  //   await this.pgClient.query({
+  //     text: `DELETE FROM alert_recipient WHERE rule_id = ${ruleId} AND recipient_id = ${recipientId}`,
+  //   });
+  // }
+
+  // async removeRecipient(recipientId: string) {
+  //   await this.pgClient.query({
+  //     text: `DELETE FROM recipient WHERE id = ${recipientId}`,
+  //   });
+  // }
+
+  async createAlert(rule: any) {
+    if (rule.threshold !== undefined) {
       await this.pgClient.query({
-        text: createAlertQuery(alert),
+        text: createAlertQuery(rule),
       });
-    } catch (e) {
-      console.log(e);
+    } else {
+      await this.pgClient.query({
+        text: createAlertNoThresholdQuery(rule),
+      });
     }
-    return {
-      success: true,
-    };
   }
 
-  async createRecipient(recipient: TRecipientQuery) {
+  async createRecipient(recipient: any) {
     await this.pgClient.query({
-      text: createRecipientQuery(recipient),
+      text: createRecipientQuery({
+        name: recipient.name,
+        detail: JSON.stringify(recipient.detail),
+      }),
     });
-    return {};
   }
 
-  async addRecipientToAlert(params: {
-    ruleId: string;
-    recipientIds: string[];
+  async createGroup(group: any) {
+    await this.pgClient.query({
+      text: createGroupQuery(group),
+    });
+  }
+
+  async addGroupToRule(param: { ruleId: number; groupId: number }) {
+    await this.pgClient.query({
+      text: createRuleGroupQuery(param.ruleId, param.groupId),
+    });
+  }
+
+  async getRecipientFromGroup(groupId: number) {
+    const recipient = (
+      await this.pgClient.query({
+        text: getRecipientsFromGroup(groupId),
+      })
+    ).rows[0];
+
+    return recipient.recipients;
+  }
+
+  async addRecipientToGroup(param: { recipients: number[]; groupId: number }) {
+    const oldRecipient = (
+      await this.pgClient.query({
+        text: getRecipientsFromGroup(param.groupId),
+      })
+    ).rows[0].recipients.map((r) => Number(r));
+
+    const recipientSet = new Set(param.recipients);
+
+    // console.log(
+    //   updateRecipientToGroupQuery(
+    //     [...(recipientSet as any).union(new Set(oldRecipient))],
+    //     param.groupId,
+    //   ),
+    // );
+
+    await this.pgClient.query({
+      text: updateRecipientToGroupQuery(
+        [...(recipientSet as any).union(new Set(oldRecipient))],
+        param.groupId,
+      ),
+    });
+  }
+
+  async removeRecipientFromGroup(param: {
+    recipients: number[];
+    groupId: number;
   }) {
-    await this.pgClient.query({
-      text: addRecipientToAlertQuery(params.ruleId, params.recipientIds),
-    });
-  }
-
-  async getAlert() {
-    const alerts: TAlertRecord[] = (
+    const oldRecipient = (
       await this.pgClient.query({
-        text: getAlertQuery(),
+        text: getRecipientsFromGroup(param.groupId),
       })
-    ).rows;
-    return alerts;
-  }
+    ).rows[0].recipients.map((r) => Number(r));
 
-  async updateAlert(alert: TAlertRuleQuery) {
+    const recipientSet = new Set(param.recipients);
+
     await this.pgClient.query({
-      text: updateAlertQuery(alert),
+      text: updateRecipientToGroupQuery(
+        [...(new Set(oldRecipient) as any).difference(recipientSet)],
+        param.groupId,
+      ),
     });
   }
 
-  async enableRule(ruleId: string) {
+  async enableRule(ruleId: number) {
     await this.pgClient.query({
-      text: `UPDATE alert_rule SET enabled = true WHERE id = ${ruleId}`,
+      text: updateRuleStatusQuery(ruleId, true),
     });
   }
 
-  async disableRule(ruleId: string) {
+  async disableRule(ruleId: number) {
     await this.pgClient.query({
-      text: `UPDATE alert_rule SET enabled = false WHERE id = ${ruleId}`,
+      text: updateRuleStatusQuery(ruleId, false),
     });
   }
 
-  async getRecipients(ruleId: string) {
-    const recipients: TRecipientRecord[] = (
-      await this.pgClient.query({
-        text: `SELECT * FROM recipient ${
-          ruleId
-            ? `WHERE id IN (SELECT alert_recipient.recipient_id FROM alert_recipient WHERE alert_recipient.rule_id = ${ruleId})`
-            : ''
-        }`,
-      })
-    ).rows;
-    return recipients;
-  }
-
-  async deleteRule(ruleId: string) {
+  async deleteRule(ruleId: number) {
     await this.pgClient.query({
-      text: `DELETE FROM alert_rule WHERE id = ${ruleId}`,
+      text: deleteRuleGroupByRule(ruleId),
+    });
+    await this.pgClient.query({
+      text: deleteRuleQuery(ruleId),
     });
   }
 
-  async removeRecipientFromRule(ruleId: string, recipientId: string) {
+  async deleteGroup(groupId: number) {
     await this.pgClient.query({
-      text: `DELETE FROM alert_recipient WHERE rule_id = ${ruleId} AND recipient_id = ${recipientId}`,
+      text: deleteRuleGroupByGroup(groupId),
+    });
+    await this.pgClient.query({
+      text: deleteGroupQuery(groupId),
     });
   }
 
-  async removeRecipient(recipientId: string) {
+  async deleteRecipient(recipient: number) {
     await this.pgClient.query({
-      text: `DELETE FROM recipient WHERE id = ${recipientId}`,
+      text: removeRecipientFromGroupQuery(recipient),
+    });
+    await this.pgClient.query({
+      text: deleteRecipientQuery(recipient),
     });
   }
 }

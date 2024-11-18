@@ -102,14 +102,13 @@ export class AppController {
     return await this.appService.serverTimeline(filter);
   }
 
-  @Get('alert-rules')
-  async getAlert() {
-    return await this.appService.getAlert();
-  }
+  // @Get('alert-rules')
+  // async getAlert() {
+  //   return await this.appService.getAlert();
+  // }
 
   @Post('create-alert')
   async createAlert(@Body() alert: TAlertRuleQuery) {
-    console.log(alert);
     return await this.appService.createAlert(alert);
   }
 
@@ -118,11 +117,18 @@ export class AppController {
     return await this.appService.createRecipient(recipient);
   }
 
-  @Post('add-recipient')
-  async addRecipientToAlert(
-    @Body() body: { ruleId: string; recipientIds: string[] },
+  @Post('add-recipient-to-group')
+  async addRecipientToGroup(
+    @Body() body: { groupId: number; recipients: number[] },
   ) {
-    return await this.appService.addRecipientToAlert(body);
+    return await this.appService.addRecipientToGroup(body);
+  }
+
+  @Post('remove-recipient-from-group')
+  async removeRecipientFromGroup(
+    @Body() body: { groupId: number; recipients: number[] },
+  ) {
+    return await this.appService.removeRecipientFromGroup(body);
   }
 
   @Post('get-alert-history')
@@ -130,46 +136,60 @@ export class AppController {
     debugger;
   }
 
-  @Post('update-alert')
-  async updateAlert(@Body() body: TAlertRuleQuery) {
-    return await this.appService.updateAlert(body);
+  @Get('get-recipient-from-group')
+  async getRecipientFromGroup(@Query('groupId') groupId: number) {
+    return this.appService.getRecipientFromGroup(groupId);
   }
 
-  @Get('recipients')
-  async getRecipients(@Query('ruleId') ruleId: string) {
-    return await this.appService.getRecipients(ruleId);
-  }
+  // @Post('update-alert')
+  // async updateAlert(@Body() body: TAlertRuleQuery) {
+  //   return await this.appService.updateAlert(body);
+  // }
+
+  // @Get('recipients')
+  // async getRecipients(@Query('ruleId') ruleId: string) {
+  //   return await this.appService.getRecipients(ruleId);
+  // }
 
   @Get('enable-rule')
-  async enableRule(@Query('ruleId') ruleId: string) {
+  async enableRule(@Query('ruleId') ruleId: number) {
     return await this.appService.enableRule(ruleId);
   }
 
   @Get('disable-rule')
-  async disableRule(@Query('ruleId') ruleId: string) {
+  async disableRule(@Query('ruleId') ruleId: number) {
     return await this.appService.disableRule(ruleId);
   }
 
-  @Get('delete-rule')
-  async deleteRule(@Query('ruleId') ruleId: string) {
-    return await this.appService.deleteRule(ruleId);
+  // @Get('delete-rule')
+  // async deleteRule(@Query('ruleId') ruleId: string) {
+  //   return await this.appService.deleteRule(ruleId);
+  // }
+
+  // @Get('remove-recipient-from-rule')
+  // async removeRecipientFromRule(
+  //   @Query('ruleId') ruleId: string,
+  //   @Query('recipientId') recipientId: string,
+  // ) {
+  //   return await this.appService.removeRecipientFromRule(ruleId, recipientId);
+  // }
+
+  // @Get('delete-recipient')
+  // async deleteRecipient(@Query('recipientId') recipientId: string) {
+  //   return await this.appService.removeRecipient(recipientId);
+  // }
+
+  // @Post('request-error-ratio')
+  // async getReqErrRatio(@Body() filter: TFilterIntervalReq) {
+  //   return await this.appService.getRequestErrorRatioGapFill(filter);
+  // }
+  @Post('create-group')
+  async createGroup(@Body() body: { groupId: number; recipients: number[] }) {
+    return this.appService.createGroup(body);
   }
 
-  @Get('remove-recipient-from-rule')
-  async removeRecipientFromRule(
-    @Query('ruleId') ruleId: string,
-    @Query('recipientId') recipientId: string,
-  ) {
-    return await this.appService.removeRecipientFromRule(ruleId, recipientId);
-  }
-
-  @Get('delete-recipient')
-  async deleteRecipient(@Query('recipientId') recipientId: string) {
-    return await this.appService.removeRecipient(recipientId);
-  }
-
-  @Post('request-error-ratio')
-  async getReqErrRatio(@Body() filter: TFilterIntervalReq) {
-    return await this.appService.getRequestErrorRatioGapFill(filter);
+  @Post('add-group-to-rule')
+  async addGroupToRule(@Body() body: any) {
+    return this.appService.addGroupToRule(body);
   }
 }

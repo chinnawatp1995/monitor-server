@@ -179,12 +179,12 @@ POST {{baseUrl}}/create-alert
 Content-Type: {{contentType}}
 
 {
-    "name": "alert_mem",
-    "expression": "AVG(MEM{services=[liberator-api],machines=[machine_03]}) > AVG(MEM, '1 day')",
-    "duration": "15 day",
-    "severity": "danger",
-    "message": "Memory usage of $services $machines is too high",
-    "silence_time": "1 day"
+    "name": "server down",
+    "type": "server_down",
+    "duration": "1 hour",
+    "message": "${machine} is down!!",
+    "silence_time": "1 day",
+    "services": ["mutual-fund"]
 }
 
 ###
@@ -194,21 +194,45 @@ Content-Type: {{contentType}}
 
 {
     "name": "telegram_bot",
-    "app": "telegram",
-    "token": "7731705891:AAEg9pvLFjTAlnUvzhhN2QpmgImIm14FUpM",
-    "url": "https://api.telegram.org/bot",
-    "room": "-4565250427"
+    "detail": {
+        "app": "telegram",
+        "token": "7731705891:AAEg9pvLFjTAlnUvzhhN2QpmgImIm14FUpM",
+        "url": "https://api.telegram.org/bot",
+        "room": "-4565250427"
+    }
 }
 
 
 ###
-# @name add-recipient-to-alert
-POST {{baseUrl}}/add-recipient
+# @name create-group
+POST {{baseUrl}}/create-group
 Content-Type: {{contentType}}
 
 {
-    "ruleId": "1",
-    "recipientIds": ["2"]
+    "name": "telegram_bot",
+    "recipients": [1,2,3]
+}
+
+
+###
+# @name add-recipient-to-group
+POST {{baseUrl}}/add-recipient-to-group
+Content-Type: {{contentType}}
+
+{
+    "groupId": 1,
+    "recipients": [1,2,3,4]
+}
+
+
+###
+# @name remove-recipient-from-group
+POST {{baseUrl}}/remove-recipient-from-group
+Content-Type: {{contentType}}
+
+{
+    "groupId": 1,
+    "recipients": [3,4]
 }
 
 
@@ -216,10 +240,6 @@ Content-Type: {{contentType}}
 # @name get-alert-history
 GET {{baseUrl}}/alert-rules
 Content-Type: {{contentType}}
-
-{
-
-}
 
 
 ###
@@ -246,13 +266,32 @@ Content-Type: {{contentType}}
 
 
 ###
-# @name remove-recipient
-GET {{baseUrl}}/remove-recipient?ruleId=2&recipientId=1
-Content-Type: {{contentType}}
-
-
-###
 # @name delete-recipient
 GET {{baseUrl}}/delete-recipient?recipientId=2
 Content-Type: {{contentType}}
 
+
+###
+# @name get-recipient-from-group
+GET {{baseUrl}}/get-recipient-from-group?groupId=1
+
+###
+# @name add-group-to-rule
+POST {{baseUrl}}/add-group-to-rule
+Content-Type: {{contentType}}
+
+{
+    "ruleId": 1,
+    "groupId": 1
+}
+
+
+###
+# @name remove-groupfrom-rule
+POST {{baseUrl}}/add-group-to-rule
+Content-Type: {{contentType}}
+
+{
+    "ruleId": 1,
+    "groupId": 1
+}

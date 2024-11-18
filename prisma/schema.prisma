@@ -114,3 +114,56 @@ model ServerStatus {
     @@index([time])
     @@map("server_status")
 }
+
+model AlertRule {
+    id            BigInt          @id @default(autoincrement())
+    name          String
+    type          String
+    threshold     Float?
+    enable        Boolean
+    duration      String          @default("5 minutes")
+    silentTime    String          @default("30 minutes") @map("silence_time")
+    service       String[]
+    RuleGroup     RuleGroup[]
+    NotifyHistory NotifyHistory[]
+    message       String          @default("")
+
+    @@map("alert_rule")
+}
+
+model Recipient {
+    id     BigInt @id @default(autoincrement())
+    name   String
+    config Json
+
+    @@map("recipient")
+}
+
+model RecipientGroup {
+    id         BigInt      @id @default(autoincrement())
+    name       String
+    recipients String[]
+    RuleGroup  RuleGroup[]
+
+    @@map("recipient_group")
+}
+
+model RuleGroup {
+    rule    AlertRule      @relation(fields: [ruleId], references: [id])
+    ruleId  BigInt         @map("rule_id")
+    group   RecipientGroup @relation(fields: [groupId], references: [id])
+    groupId BigInt         @map("group_id")
+
+    @@unique([ruleId, groupId])
+    @@map("rule_group")
+}
+
+model NotifyHistory {
+    id     BigInt    @id @default(autoincrement())
+    time   DateTime  @default(now()) @db.Timestamptz(6)
+    rule   AlertRule @relation(fields: [ruleId], references: [id])
+    ruleId BigInt    @map("rule_id")
+    detail String?
+
+    @@map("notify_history")
+}
