@@ -40,7 +40,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Build
-        run: yarn build --cache-dir=.turbo
+        run: yarn build
 
       - name: Reduce size of images
         run: yarn install --frozen-lockfile --production --prefer-offline --ignore-scripts
