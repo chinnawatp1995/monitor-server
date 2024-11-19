@@ -314,3 +314,14 @@ Content-Type: {{contentType}}
 # @name get-groups
 GET {{baseUrl}}/groups
 Content-Type: {{contentType}}
+
+
+###
+# @name update-group-of-rule
+POST {{baseUrl}}/update-group-of-rule
+Content-Type: {{contentType}}
+
+{
+    "ruleId": 7,
+    "groupIds": [1,2]
+}

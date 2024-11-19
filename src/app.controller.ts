@@ -212,4 +212,9 @@ export class AppController {
   async removeGroupFromRule(@Body() body: any) {
     return await this.appService.removeGroupFromRule(body);
   }
+
+  @Post('update-group-of-rule')
+  async updateGroupOfRule(@Body() body: any) {
+    return await this.appService.updateGroupOfRule(body);
+  }
 }

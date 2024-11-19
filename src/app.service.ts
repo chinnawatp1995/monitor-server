@@ -802,4 +802,35 @@ export class AppService {
       text: removeGroupFromRule(param.ruleId, param.groupIds),
     });
   }
+
+  async updateGroupOfRule(param: any) {
+    const existingGroup = (
+      await this.pgClient.query({
+        text: getGroupFromRuleQuery(param.ruleId),
+      })
+    ).rows.map((r) => Number(r.id));
+
+    const existingGroupSet = new Set(existingGroup);
+    const addedGroup = (
+      new Set(param.groupIds.map((g) => Number(g))) as any
+    ).difference(existingGroupSet);
+
+    const removedGroup = (existingGroupSet as any).difference(
+      new Set(param.groupIds.map((g) => Number(g))),
+    );
+
+    if ([...addedGroup].length > 0) {
+      await this.addGroupToRule({
+        ruleId: param.ruleId,
+        groupIds: [...addedGroup],
+      });
+    }
+
+    if ([...removedGroup].length > 0) {
+      await this.removeGroupFromRule({
+        ruleId: param.ruleId,
+        groupIds: [...removedGroup],
+      });
+    }
+  }
 }

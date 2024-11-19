@@ -836,12 +836,15 @@ export const createAlertQuery = (rule: any) =>
   }');`;
 
 export const createAlertNoThresholdQuery = (rule: any) =>
-  `INSERT INTO alert_rule (name, type, service, enable, duration, silence_time, message ) 
-     VALUES ('${rule.name}', '${rule.type}',  '{${rule.services
-    .map((service) => service)
-    .join(',')}}', true, '${rule.duration}', '${rule.silence_time}', '${
-    rule.message
-  }');`;
+  `INSERT INTO alert_rule (name, type, enable, duration, silence_time, message, service ) 
+     VALUES ('${rule.name}', '${rule.type}', true, '${rule.duration}', '${
+    rule.silence_time
+  }', '${rule.message}', ${
+    rule.service
+      ? `'{${rule.services.map((service) => service).join(',')}}'
+  }'`
+      : `'{}'`
+  });`;
 
 export const createRecipientQuery = (recipient: any) =>
   `INSERT INTO recipient (name, config) VALUES ('${recipient.name}', '${recipient.detail}') `;
@@ -902,7 +905,7 @@ export const deleteRuleGroupByGroup = (groupId: number) =>
 export const removeGroupFromRule = (ruleId: number, groupIds: number[]) =>
   `
   DELETE FROM rule_group WHERE 
-  ruleId = ${ruleId} AND group_id in (${groupIds.join(',')})
+  rule_id = ${ruleId} AND group_id in (${groupIds.join(',')})
 `;
 
 export const removeRecipientFromGroupQuery = (recipient: number) =>

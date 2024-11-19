@@ -34,7 +34,7 @@ export class AlertManager {
         }
       } else {
         const rows = await this.getData(rule);
-        // console.log(rows);
+        if (!rows) return;
         for (const row of rows) {
           if (Number(row.value) >= rule.threshold) {
             // console.log('pass threshold');
@@ -96,7 +96,7 @@ export class AlertManager {
   }
 
   async getData(rule: any) {
-    switch (rule.type) {
+    switch (rule.type.toLowerCase()) {
       case POSSIBLE_RULES.HIGH_CPU:
         return (
           await pgClient.query({
