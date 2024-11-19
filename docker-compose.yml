@@ -11,12 +11,18 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
 
-  grafana:
-    image: grafana/grafana:10.0.2
+  monitorserver:
+    image: monitorserver:latest
+    command: node dist/main.js
     ports:
-      - '3000:3000'
+      - '3010:3010'
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - ./grafana:/etc/grafana/provisioning/
+      - DATABASE_URL=postgresql://postgres:password@localhost:5432/monitor_server?schema=public
+      - PGUSER=postgres
+      - PGPASSWORD=password
+      - PGHOST=host.docker.internal
+      - PGPORT=5432
+      - PGDATABASE=monitor_server_
+      - TELEGRAM_URL=https://api.telegram.org/bot
+      - TELEGRAM_TOKEN=7731705891:AAEg9pvLFjTAlnUvzhhN2QpmgImIm14FUpM
+      - TELEGRAM_CHAT_ID=-4565250427
