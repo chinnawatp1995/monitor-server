@@ -1,0 +1,116 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model RequestCount {
+    time       DateTime @default(now()) @db.Timestamptz(6)
+    service    String
+    machine    String
+    controller String
+    path       String
+    statusCode Int      @map("status_code")
+    value      BigInt
+
+    @@unique([time, service, machine, controller, path, statusCode])
+    @@index([time])
+    @@map("request_count")
+}
+
+model ResponseTime {
+    time         DateTime @default(now()) @db.Timestamptz(6)
+    service      String
+    machine      String
+    controller   String
+    statusCode   Int      @map("status_code")
+    path         String
+    count        BigInt
+    sum          Float
+    bucket_25    BigInt   @default(0)
+    bucket_50    BigInt   @default(0)
+    bucket_100   BigInt   @default(0)
+    bucket_200   BigInt   @default(0)
+    bucket_400   BigInt   @default(0)
+    bucket_800   BigInt   @default(0)
+    bucket_1600  BigInt   @default(0)
+    bucket_3200  BigInt   @default(0)
+    bucket_6400  BigInt   @default(0)
+    bucket_12800 BigInt   @default(0)
+
+    @@unique([time, service, machine, controller, path, statusCode])
+    @@index([time])
+    @@map("response_time")
+}
+
+model Error {
+    time       DateTime @default(now()) @db.Timestamptz(6)
+    service    String
+    machine    String
+    controller String
+    path       String
+    errorCode  String?  @map("error_code")
+    errorTitle String?  @map("error_title")
+    value      BigInt
+
+    @@unique([time, service, machine, controller, path])
+    @@index([time])
+    @@map("error")
+}
+
+model Cpu {
+    time    DateTime @default(now()) @db.Timestamptz(6)
+    service String
+    machine String
+    value   Float
+
+    @@unique([time, service, machine])
+    @@map("cpu")
+}
+
+model Mem {
+    time    DateTime @default(now()) @db.Timestamptz(6)
+    service String
+    machine String
+    value   Float
+
+    @@unique([time, service, machine])
+    @@index([time])
+    @@map("mem")
+}
+
+model RxNetwork {
+    time    DateTime @default(now()) @db.Timestamptz(6)
+    service String
+    machine String
+    value   BigInt
+
+    @@unique([time, service, machine])
+    @@index([time])
+    @@map("rx_network")
+}
+
+model TxNetwork {
+    time    DateTime @default(now()) @db.Timestamptz(6)
+    service String
+    machine String
+    value   BigInt
+
+    @@unique([time, service, machine])
+    @@index([time])
+    @@map("tx_network")
+}
+
+model ServerStatus {
+    time      DateTime @default(now()) @db.Timestamptz(6)
+    machineId String   @map("machine_id")
+    service   String
+    status    Boolean
+
+    @@unique([time, service, machineId])
+    @@index([time])
+    @@map("server_status")
+}

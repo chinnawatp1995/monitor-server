@@ -8,51 +8,18 @@ Content-Type:  {{contentType}}
 
 
 ###
-# @name collectMetrics
-POST {{baseUrl}}/collectMetrics
-Content-Type:  {{contentType}}
-
-{
-    "requestRate": {
-        "data": [
-            {
-                "created": 1,
-                "job": "job_A",
-                "machineId": "machine_01",
-                "count": 10,
-                "path": "path_a"
-            },
-            {
-                "created": 2,
-                "job": "job_A",
-                "machineId": "machine_01",
-                "count": 10,
-                "path": "path_a"
-            },
-            {
-                "created": 3,
-                "job": "job_A",
-                "machineId": "machine_01",
-                "count": 10,
-                "path": "path_a"
-            }
-        ]
-    }
-}
-
-###
 # @name list-service
 GET {{baseUrl}}/services
 
 
 ###
 # @name list-machine
-GET {{baseUrl}}/machines?service=jobA
+GET {{baseUrl}}/machines?service=liberator-api
 
 
 ###
 # @name get-path
-GET {{baseUrl}}/path?service=jobA
+GET {{baseUrl}}/path?service=liberator-api
 
 
 ###
@@ -64,17 +31,17 @@ Content-Type:  {{contentType}}
     "machineIds": ["machine_01", "machine_02"]
 }
 
+
 ###
 # @name request-data
 POST {{baseUrl}}/request
 Content-Type: {{contentType}}
 
 {
-    "startTime": "2024-10-08 21:27:53.602+00",
-    "endTime": "2024-10-10 21:28:53.602+00" ,
-    "resolution": "1 hour"
+    "interval": "1 week",
+    "totalPoint": 33
     # "services": ["jobA"],
-    # "machineIds": ["machine_02", "machine_01"]
+    # "machines": ["machine_03"]
 }
 
 ### 
@@ -83,11 +50,11 @@ POST {{baseUrl}}/cpu-usage
 Content-Type: {{contentType}}
 
 {
-    "startTime": "2024-10-08T16:00:00.000Z",
-    "endTime": "2024-10-09T23:00:00.000Z" ,
-    "resolution": "1 hour"
-    # "machineIds": ["machine_02"]
+    "interval": "3 hours",
+    "totalPoint": 10 
+    # "machines": ["machine_05"]
 }
+
 
 ### 
 # @name get-mem-usage
@@ -95,11 +62,11 @@ POST {{baseUrl}}/mem-usage
 Content-Type: {{contentType}}
 
 {
-    "startTime": "2024-10-08 21:27:53.602+00",
-    "endTime": "2024-10-29 21:28:53.602+00" ,
-    "resolution": "1 hour"
+    "interval": "1 week",
+    "totalPoint": 500
     # "machineIds": ["machine_02"]
 }
+
 
 ### 
 # @name get-rx-network-usage
@@ -107,9 +74,8 @@ POST {{baseUrl}}/rx-network-usage
 Content-Type: {{contentType}}
 
 {
-    "startTime": "2024-10-08 21:27:53.602+00",
-    "endTime": "2024-10-09 21:28:53.602+00" ,
-    "resolution": "1 hour"
+    "interval": "1 week",
+    "totalPoint": 500
     # "machineIds": ["machine_02"]
 }
 
@@ -120,19 +86,55 @@ POST {{baseUrl}}/tx-network-usage
 Content-Type: {{contentType}}
 
 {
-    "startTime": "2024-10-08 21:27:53.602+00",
-    "endTime": "2024-10-09 21:28:53.602+00" ,
-    "resolution": "1 hour"
+     "interval": "1 week",
+    "totalPoint": 500
     # "machineIds": ["machine_02"]
 }
 
 ###
-# @name error-req
-GET {{baseUrl}}/error-req?service=jobB
+# @name error-req-ratio
+POST {{baseUrl}}/request-error-ratio
+Content-Type: {{contentType}}
+
+{
+    "interval": "7 day"
+    # "machines": ["machine_00"]
+}
+
+###
+# @name error-rate
+POST {{baseUrl}}/error-rate
+Content-Type: {{contentType}}
+
+{
+    "startTime": "2024-10-08 21:27:53.602+00",
+    "endTime" : "2024-12-08 21:27:53.602+00",
+    "resolution": "1 hour"
+    # "services": [],
+    # "machines": [],
+    # "controllers": []
+}
+
+
+
+###
+# @name path-ratio
+POST {{baseUrl}}/path-ratio
+Content-Type: {{contentType}}
+
+{
+    "startTime": "2024-10-08 21:27:53.602+00",
+    "endTime" : "2024-12-08 21:27:53.602+00"
+    # "services": [],
+    # "machines": [],
+    # "controllers": []
+}
+
 
 ### 
 # @name error-ranking
 GET {{baseUrl}}/error-ranking?service=liberator-api
+
 
 ###
 # @name response-avg
@@ -140,37 +142,36 @@ POST {{baseUrl}}/avg-response
 Content-Type: {{contentType}}
 
 {
-    "startTime": "2024-10-08 21:27:53.602+00",
-    "endTime": "2024-10-10 21:28:53.602+00" ,
-    "resolution": "1 hour"
+    "interval": "1 week",
+    "totalPoint": 500
     # "services": ["jobA"],
     # "machineIds": ["machine_02", "machine_01"]
 }
 
-###
-# @name response-dist
-POST {{baseUrl}}/dist-response
-Content-Type: {{contentType}}
+# ###
+# # @name response-dist
+# POST {{baseUrl}}/dist-response
+# Content-Type: {{contentType}}
 
-{
-    "startTime": "2024-10-07 21:27:53.602+00",
-    "endTime": "2024-10-30 21:28:53.602+00" ,
-    "resolution": "1 second"
-    # "services": ["liberator-api"],
-    # "controllers": ["AppController"]
-}
+# {
+#     "startTime": "2024-10-07 21:27:53.602+00",
+#     "endTime": "2024-12-30 21:28:53.602+00" ,
+#     "resolution": "1 second"
+#     # "services": ["liberator-api"],
+#     # "controllers": ["AppController"]
+# }
 
-###
-# @name server-timeline
-POST {{baseUrl}}/server-timeline
-Content-Type: {{contentType}}
+# ###
+# # @name server-timeline
+# POST {{baseUrl}}/server-timeline
+# Content-Type: {{contentType}}
 
-{
-    "startTime": "2024-10-07 21:27:53.602+00",
-    "endTime": "2024-10-30 21:28:53.602+00" ,
-    "services": "jobA",
-    "machineIds": ["machine_01", "machine_02"]
-}
+# {
+#     "startTime": "2024-10-07 21:27:53.602+00",
+#     "endTime": "2024-12-30 21:28:53.602+00" ,
+#     "services": "jobA",
+#     "machineIds": ["machine_01", "machine_02"]
+# }
 
 ###
 # @name create-alert
@@ -240,7 +241,7 @@ Content-Type: {{contentType}}
 
 ###
 # @name delete-rule
-GET {{baseUrl}}/delete-rule?ruleId=20
+GET {{baseUrl}}/delete-rule?ruleId=2
 Content-Type: {{contentType}}
 
 
@@ -248,3 +249,10 @@ Content-Type: {{contentType}}
 # @name remove-recipient
 GET {{baseUrl}}/remove-recipient?ruleId=2&recipientId=1
 Content-Type: {{contentType}}
+
+
+###
+# @name delete-recipient
+GET {{baseUrl}}/delete-recipient?recipientId=2
+Content-Type: {{contentType}}
+

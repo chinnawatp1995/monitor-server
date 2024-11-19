@@ -1,8 +1,9 @@
-import { groupBy, keyBy } from 'lodash';
+import { keyBy } from 'lodash';
 import * as moment from 'moment';
 import axios from 'axios';
 import { cpuData } from './test-data';
 import { pgClient } from 'src/app.service';
+import { AlertRule, Expression } from './types/alert.type';
 
 export const getTIMESTAMPTZ = () => {
   const date = new Date();
@@ -17,12 +18,13 @@ export const getTIMESTAMPTZ = () => {
 };
 
 export function fillMissingBuckets(
-  data: any,
+  data: Record<string, string | number>[],
   bucketField: string,
   valueField: string,
   groupByField: string,
   interval = 'hour',
   defaultValue = 0,
+  n = 1,
 ) {
   const parsedData = data.map((item) => ({
     ...item,
@@ -37,10 +39,10 @@ export function fillMissingBuckets(
   let current = minTime.clone();
   while (current <= maxTime) {
     allBuckets.push(current.toISOString());
-    current = current.add(1, interval as any); // Ensure 'interval' matches a valid moment unit like 'hour', 'minute', etc.
+    current = current.add(n, interval as moment.DurationInputArg2);
   }
 
-  const groupedData = groupBy(parsedData, groupByField);
+  const groupedData = groups(parsedData, (obj) => String(obj[groupByField]));
   const completeData = Object.keys(groupedData).reduce((result, groupId) => {
     const groupData = groupedData[groupId];
 
@@ -60,19 +62,6 @@ export function fillMissingBuckets(
 
   return completeData;
 }
-
-export const testFunc = () => {
-  const result = fillMissingBuckets(cpuData, 'bucket', 'avg', 'machine_id');
-  console.log(result);
-};
-
-export const toChart = (data: any) => {
-  debugger;
-};
-
-export const timestampToISO = (timestamp: string, timezone: string) => {
-  debugger;
-};
 
 export const changeTimeZone = (
   time: string,
@@ -101,7 +90,205 @@ export async function sendTelegram(
   });
 }
 
-export const delegateTerm = async (rule: any) => {
+const validTerm =
+  /(AVG|SUM|COUNT|MIN|MAX)\((cpu|mem|request|response|error|error_rate|rx_net|tx_net)(\{[^}]*\})*(,.*'(\d+ (minute|hour|day|week|month|year)s*)')*\)/gi;
+
+export const METRIC_QUERY = {
+  cpu: (alert: Expression) =>
+    `SELECT ${
+      alert.aggregation
+    }(value) as value FROM cpu WHERE time >= now() - interval '${
+      alert.duration
+    }' 
+    ${
+      alert.services
+        ? `AND service IN (${alert.services.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      alert.machines
+        ? `AND machine IN (${alert.machines.map((m) => `'${m}'`).join(',')})`
+        : ''
+    }
+    ${alert.aggregation.toUpperCase() === 'LAST' ? 'LIMIT 1' : ''}
+  `,
+  mem: (alert: Expression) =>
+    `SELECT ${
+      alert.aggregation
+    }(value) as value FROM mem WHERE time >= now() - interval '${
+      alert.duration
+    }' 
+    ${
+      alert.services
+        ? `AND service IN (${alert.services.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      alert.machines
+        ? `AND machine IN (${alert.machines.map((m) => `'${m}'`).join(',')})`
+        : ''
+    }
+    ${alert.aggregation.toUpperCase() === 'LAST' ? 'LIMIT 1' : ''}
+  `,
+  rx_network: (alert: Expression) => `
+    SELECT ${alert.aggregation}(rx_sec) as value 
+    FROM rx_network 
+    WHERE time >= now() - interval '${alert.duration}'
+    ${
+      alert.services
+        ? `AND service IN (${alert.services.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      alert.machines
+        ? `AND machine IN (${alert.machines.map((m) => `'${m}'`).join(',')})`
+        : ''
+    }
+    ${alert.aggregation.toUpperCase() === 'LAST' ? 'LIMIT 1' : ''}
+  `,
+  tx_network: (alert: Expression) => `
+    SELECT ${alert.aggregation}(tx_sec) as value 
+    FROM tx_network 
+    WHERE time >= now() - interval '${alert.duration}'
+    ${
+      alert.services
+        ? `AND service IN (${alert.services.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      alert.machines
+        ? `AND machine IN (${alert.machines.map((m) => `'${m}'`).join(',')})`
+        : ''
+    }
+    ${alert.aggregation.toUpperCase() === 'LAST' ? 'LIMIT 1' : ''}
+  `,
+  request: (alert: Expression) => `
+    WITH request_deltas AS (
+      SELECT
+          time,
+          path,
+          service,
+          machine,
+          controller,
+          error_title,
+          CASE
+              WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time) 
+              THEN value  
+              ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time)
+          END AS request_in_interval
+      FROM
+          error
+      WHERE time >= now() - interval '${alert.duration}'
+      ${
+        (alert.services ?? []).length > 0
+          ? `AND service IN  ( ${alert.services
+              .map((s) => `'${s}'`)
+              .join(',')})`
+          : ''
+      }
+      ${
+        (alert.machines ?? []).length > 0
+          ? `AND machine IN  ( ${alert.machines
+              .map((s) => `'${s}'`)
+              .join(',')})`
+          : ''
+      }
+      ${
+        (alert.controllers ?? []).length > 0
+          ? `AND controller IN  ( ${alert.controllers
+              .map((s) => `'${s}'`)
+              .join(',')})`
+          : ''
+      }
+    )
+    SELECT ${
+      alert.aggregation
+    }(request_in_interval) AS value FROM request_deltas 
+  `,
+  response: (alert: Expression) => `
+    SELECT ${alert.aggregation}(sum/count) as value 
+    FROM response_time 
+    WHERE time >= now() - interval '${alert.duration}'
+    ${
+      alert.services
+        ? `AND service IN (${alert.services.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      alert.machines
+        ? `AND machine_id IN (${alert.machines.map((m) => `'${m}'`).join(',')})`
+        : ''
+    }
+    ${alert.aggregation.toUpperCase() === 'LAST' ? 'LIMIT 1' : ''}
+  `,
+  error: (alert: Expression) => `
+    WITH error_deltas AS (
+      SELECT
+          time,
+          path,
+          service,
+          machine,
+          controller,
+          error_title,
+          CASE
+              WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time) 
+              THEN value  
+              ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
+          END AS errors_in_interval
+      FROM
+          error
+      WHERE time >= now() - interval '${alert.duration}'
+      ${
+        (alert.services ?? []).length > 0
+          ? `AND service IN  ( ${alert.services
+              .map((s) => `'${s}'`)
+              .join(',')})`
+          : ''
+      }
+      ${
+        (alert.machines ?? []).length > 0
+          ? `AND machine IN  ( ${alert.machines
+              .map((s) => `'${s}'`)
+              .join(',')})`
+          : ''
+      }
+      ${
+        (alert.controllers ?? []).length > 0
+          ? `AND controller IN  ( ${alert.controllers
+              .map((s) => `'${s}'`)
+              .join(',')})`
+          : ''
+      }
+    )
+    SELECT ${alert.aggregation}(errors_in_interval) AS value FROM error_deltas 
+  `,
+  server_status: (alert: Expression) =>
+    `SELECT ${alert.aggregation}(status) as value
+     FROM server_status
+     WHERE status = FALSE
+     AND time >= now() - interval '${alert.duration}' 
+     ${
+       alert.services
+         ? `AND service IN (${alert.services.map((s) => `'${s}'`).join(',')})`
+         : ''
+     }
+    ${
+      alert.machines
+        ? `AND machine_id IN (${alert.machines.map((m) => `'${m}'`).join(',')})`
+        : ''
+    }
+     ${
+       alert.value
+         ? `AND status IN (${alert.value.map((s) => `'${s}'`).join(',')})`
+         : ''
+     }
+     ;`,
+};
+
+export const delegateTerm = async (rule: {
+  expression: string;
+  duration: string;
+}) => {
   const matchString = rule.expression.match(validTerm);
   let delegatedExpression = rule.expression;
   for (const expression of matchString) {
@@ -113,163 +300,6 @@ export const delegateTerm = async (rule: any) => {
     );
   }
   return delegatedExpression;
-};
-
-const validTerm =
-  /(AVG|SUM|COUNT|MIN|MAX)\((cpu|mem|request|response|error|error_rate|rx_net|tx_net)(\{[^}]*\})*(,.*'(\d+ (minute|hour|day|week|month|year)s*)')*\)/gi;
-
-export const METRIC_QUERY = {
-  cpu: (alert: any) =>
-    `SELECT ${
-      alert.aggregation
-    }(value) as value FROM cpu_usage WHERE time >= now() - interval '${
-      alert.duration
-    }' 
-    ${
-      alert.service
-        ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
-        : ''
-    }
-    ${
-      alert.machine
-        ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
-        : ''
-    }
-  `,
-  mem: (alert: any) =>
-    `SELECT ${
-      alert.aggregation
-    }(value) as value FROM mem_usage WHERE time >= now() - interval '${
-      alert.duration
-    }' 
-    ${
-      alert.service
-        ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
-        : ''
-    }
-    ${
-      alert.machine
-        ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
-        : ''
-    }
-  `,
-  rx_network: (alert: any) => `
-    SELECT ${alert.aggregation}(rx_sec) as value 
-    FROM network_usage 
-    WHERE time >= now() - interval '${alert.duration}'
-    ${
-      alert.service
-        ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
-        : ''
-    }
-    ${
-      alert.machine
-        ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
-        : ''
-    }
-  `,
-  tx_network: (alert: any) => `
-    SELECT ${alert.aggregation}(tx_sec) as value 
-    FROM network_usage 
-    WHERE time >= now() - interval '${alert.duration}'
-    ${
-      alert.service
-        ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
-        : ''
-    }
-    ${
-      alert.machine
-        ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
-        : ''
-    }
-  `,
-  request: (alert: any) => `
-    SELECT COUNT(*) as value 
-    FROM (
-      SELECT COUNT(*) as total_requests 
-      FROM request 
-      WHERE time >= now() - interval '${alert.duration}'
-      ${
-        alert.service
-          ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
-          : ''
-      }
-      ${
-        alert.machine
-          ? `AND machine_id IN (${alert.machine
-              .map((m) => `'${m}'`)
-              .join(',')})`
-          : ''
-      }
-    )
-  `,
-  response: (alert: any) => `
-    SELECT ${alert.aggregation}(response_time) as value 
-    FROM request 
-    WHERE time >= now() - interval '${alert.duration}'
-    ${
-      alert.service
-        ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
-        : ''
-    }
-    ${
-      alert.machine
-        ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
-        : ''
-    }
-  `,
-  error_rate: (alert: any) => `
-    SELECT (COUNT(CASE WHEN status_code >= 400 THEN 1 END) * 100.0 / COUNT(*)) as value 
-    FROM request 
-    WHERE time >= now() - interval '${alert.duration}'
-    ${
-      alert.service
-        ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
-        : ''
-    }
-    ${
-      alert.machine
-        ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
-        : ''
-    }
-  `,
-  error: (alert: any) => `
-    SELECT ${alert.aggregation}(error_count) as value 
-    FROM (
-      SELECT COUNT(*) as error_count 
-      FROM request 
-      WHERE status_code >= 400 
-      AND time >= now() - interval '${alert.duration}'
-      ${
-        alert.service
-          ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
-          : ''
-      }
-      ${
-        alert.machine
-          ? `AND machine_id IN (${alert.machine
-              .map((m) => `'${m}'`)
-              .join(',')})`
-          : ''
-      }
-    )
-  `,
-  server_down: (alert: any) =>
-    `SELECT COUNT(*) as value
-     FROM server_status
-     WHERE status = FALSE
-     AND time >= now() - interval '${alert.duration}' 
-     ${
-       alert.service
-         ? `AND service IN (${alert.service.map((s) => `'${s}'`).join(',')})`
-         : ''
-     }
-    ${
-      alert.machine
-        ? `AND machine_id IN (${alert.machine.map((m) => `'${m}'`).join(',')})`
-        : ''
-    }
-     ;`,
 };
 
 const getDataFromRule = async (
@@ -318,34 +348,22 @@ async function delegate(term: string, duration = '1 days') {
   );
 }
 
-const testExpressions = [
+export const testExpressions = [
   'AVG(CPU{services=[s1,s2,s3],machines=[x,y,z]})',
   'COUNT(error{services=[s1]})',
   'MAX(response{machine=[mid_01,mid_02]})',
 ];
 
-const testRules = [
+export const testRules = [
   "AVG(CPU{services=[liberator-api],machines=[machine_03]}) > AVG(CPU, '1 days')",
   'COUNT(error{services=[s1]}) > 0',
   "MAX(response{machine=[mid_01,mid_02]}) > MAX(response, '3 days')",
 ];
 
-export const testExpressionParser = () => {
-  for (const exp of testExpressions) {
-    const alert = {
-      aggregation: exp.match(ruleTermRegex.aggregation)[0],
-      metric: exp.match(ruleTermRegex.metrics)[0],
-      service: exp.match(ruleTermRegex.service)?.[1].split(','),
-      machine: exp.match(ruleTermRegex.machine)?.[1].split(','),
-      duration: exp.match(ruleTermRegex.time)?.[1],
-    };
-  }
-};
-
 export const testRuleParser = async () => {
   for (const rule of testRules) {
     const alertRule = {
-      rule,
+      expression: rule,
       duration: '7 days',
     };
     const a = await delegateTerm(alertRule);
@@ -354,6 +372,19 @@ export const testRuleParser = async () => {
   }
 };
 
-export const templateStringFormat = (str: string, ...args: any[]) => {
-  return str.replace(/\$\{([\w+\d+]+)\}/g, (_, key) => args[key]);
-};
+export function groups<T>(
+  arr: T[],
+  groupDominator: (t: T) => string,
+): Record<string, T[]> {
+  const results: Record<string, T[]> = {};
+  for (const t of arr) {
+    const d = groupDominator(t);
+    let list = results[d];
+    if (!list) {
+      list = [];
+      results[d] = list;
+    }
+    list.push(t);
+  }
+  return results;
+}

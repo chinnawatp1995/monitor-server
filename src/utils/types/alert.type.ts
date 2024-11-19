@@ -9,6 +9,15 @@ export interface AlertRule {
   message: string;
 }
 
+export interface Expression {
+  aggregation: 'AVG' | 'SUM' | 'COUNT' | 'MIN' | 'MAX' | 'LAST' | 'FIRST';
+  services?: string[];
+  machines?: string[];
+  controllers?: string[];
+  duration?: string;
+  value?: number[];
+}
+
 export interface MetricData {
   service: string;
   machine_id?: string;
