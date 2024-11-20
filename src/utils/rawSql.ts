@@ -245,9 +245,9 @@ WITH error_deltas AS (
         controller,
         error_title,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
+            WHEN value < COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time), 0)
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
+            ELSE value - COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time), 0)
         END AS errors_in_interval
     FROM
         error
@@ -352,9 +352,9 @@ WITH error_deltas AS (
       error_title,
       error_code,
       CASE 
-        WHEN value < LAG(value) OVER (PARTITION BY path, service, machine, controller, error_code, error_title ORDER BY time) 
+        WHEN value < COALESCE(LAG(value) OVER (PARTITION BY path, service, machine, controller, error_code, error_title ORDER BY time), 0) 
         THEN value 
-        ELSE value - LAG(value) OVER (PARTITION BY path, service, machine, controller, error_code, error_title ORDER BY time) 
+        ELSE value - COALESCE(LAG(value) OVER (PARTITION BY path, service, machine, controller, error_code, error_title ORDER BY time), 0) 
       END AS errors_in_interval
     FROM error
     WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
@@ -650,9 +650,9 @@ WITH request_deltas AS (
         machine,
         controller,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time) 
+            WHEN value < COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time), 0) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time)
+            ELSE value - COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time), 0)
         END AS requests_in_interval
     FROM
         request_count
@@ -783,9 +783,9 @@ export const getRequestPath = (services: string, interval = '1 week'): string =>
         machine,
         controller,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time) 
+            WHEN value < COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time), 0) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time)
+            ELSE value - COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time), 0)
         END AS requests_in_interval
     FROM
         request_count
