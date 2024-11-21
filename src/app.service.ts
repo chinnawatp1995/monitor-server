@@ -381,27 +381,48 @@ export class AppService {
     return records;
   }
 
-  async getCurrentServerStatus(machineIds?: string[]) {
+  async getCurrentServerStatus(machineIds?: string[], service?: string) {
     const serverStatus: TServerStatus[] = (
       await this.pgClient.query({
-        text: getCurrentServerStatusQuery(machineIds),
+        text: getCurrentServerStatusQuery(machineIds, service),
       })
     ).rows;
     return serverStatus;
   }
 
   async getRequestDataGapFill(filterObj: TFilterIntervalReq) {
-    const { interval, totalPoint, services, machines } = filterObj;
+    const {
+      interval,
+      totalPoint,
+      services,
+      machines,
+      groupField,
+      controllers,
+    } = filterObj;
     const records: TTotalRequestRecord[] = (
       await this.pgClient.query({
-        text: getTotalRequestGapFill(interval, totalPoint, services, machines),
+        text: getTotalRequestGapFill(
+          interval,
+          totalPoint,
+          services,
+          machines,
+          controllers,
+          groupField,
+        ),
       })
     ).rows;
-    return groups(records, ({ machine }) => machine);
+    return groups(records, (r) => r[groupField ?? 'machine']);
   }
 
   async getResponseAvgDataGapFill(filterObj: TFilterIntervalReq) {
-    const { interval, totalPoint, services, machines } = filterObj;
+    const {
+      interval,
+      totalPoint,
+      services,
+      machines,
+      groupField,
+      controllers,
+    } = filterObj;
     const records: TAvgResponseTimeRecord[] = (
       await this.pgClient.query({
         text: getAverageResponseTimeGapFill(
@@ -409,10 +430,12 @@ export class AppService {
           totalPoint,
           services,
           machines,
+          controllers,
+          groupField,
         ),
       })
     ).rows;
-    return groups(records, ({ machine }) => machine);
+    return groups(records, (r) => r[groupField ?? 'machine']);
   }
 
   // async getResponseDistData(filterObj: TFilterReq) {
@@ -445,48 +468,55 @@ export class AppService {
   }
 
   async getCpuGapFillData(filter: TFilterIntervalReq) {
-    const { interval, totalPoint, machines } = filter;
+    const { interval, totalPoint, machines, groupField } = filter;
     const records: TResourceRecord[] = (
       await this.pgClient.query({
         text: cpuGapFillQuery(interval, totalPoint, machines),
       })
     ).rows;
-    return groups(records, ({ machine }) => machine);
+    return groups(records, (r) => r[groupField ?? 'machine']);
   }
 
   async getMemGapFillData(filter: TFilterIntervalReq) {
-    const { interval, totalPoint, machines } = filter;
+    const { interval, totalPoint, machines, groupField } = filter;
     const records: TResourceRecord[] = (
       await this.pgClient.query({
         text: memGapFillQuery(interval, totalPoint, machines),
       })
     ).rows;
-    return groups(records, ({ machine }) => machine);
+    return groups(records, (r) => r[groupField ?? 'machine']);
   }
 
   async getRxNetowrkGapFillData(filter: TFilterIntervalReq) {
-    const { interval, totalPoint, machines } = filter;
+    const { interval, totalPoint, machines, groupField } = filter;
     const records: TResourceRecord[] = (
       await this.pgClient.query({
         text: rxNetworkGapFillQuery(interval, totalPoint, machines),
       })
     ).rows;
-    return groups(records, ({ machine }) => machine);
+    return groups(records, (r) => r[groupField ?? 'machine']);
   }
 
   async getTxNetowrkGapFillData(filter: TFilterIntervalReq) {
-    const { interval, totalPoint, machines } = filter;
+    const { interval, totalPoint, machines, groupField } = filter;
     const records: TResourceRecord[] = (
       await this.pgClient.query({
         text: txNetworkGapFillQuery(interval, totalPoint, machines),
       })
     ).rows;
-    return groups(records, ({ machine }) => machine);
+    return groups(records, (r) => r[groupField ?? 'machine']);
   }
 
   async getErrorRate(filterObj: TFilterReq) {
-    const { startTime, endTime, resolution, services, machines, controllers } =
-      filterObj;
+    const {
+      startTime,
+      endTime,
+      resolution,
+      services,
+      machines,
+      controllers,
+      groupField,
+    } = filterObj;
     const unit = (resolution ?? '1 hour').split(' ')[1].replace('s', '');
     const records: TErrorRecord[] = (
       await this.pgClient.query({
@@ -497,6 +527,7 @@ export class AppService {
           services,
           machines,
           controllers,
+          groupField,
         ),
       })
     ).rows;
