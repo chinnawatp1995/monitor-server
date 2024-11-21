@@ -311,6 +311,13 @@ export class AppService {
     });
   }
 
+  heartbeat(machine: string, service: string) {
+    this.updateStatus({
+      machine,
+      service,
+    });
+  }
+
   private updateStatus(labels: Record<string, string>) {
     const { service, machine } = labels;
     const mapValue = TRACK_STATUS.get(`${service}:${machine}`) ?? [];
