@@ -498,40 +498,40 @@ export class AppService {
   }
 
   async getCpuGapFillData(filter: TFilterIntervalReq) {
-    const { interval, totalPoint, machines, groupField } = filter;
+    const { interval, totalPoint, machines, groupField, services } = filter;
     const records: TResourceRecord[] = (
       await this.pgClient.query({
-        text: cpuGapFillQuery(interval, totalPoint, machines),
+        text: cpuGapFillQuery(interval, totalPoint, machines, services),
       })
     ).rows;
     return groups(records, (r) => r[groupField ?? 'machine']);
   }
 
   async getMemGapFillData(filter: TFilterIntervalReq) {
-    const { interval, totalPoint, machines, groupField } = filter;
+    const { interval, totalPoint, machines, groupField, services } = filter;
     const records: TResourceRecord[] = (
       await this.pgClient.query({
-        text: memGapFillQuery(interval, totalPoint, machines),
+        text: memGapFillQuery(interval, totalPoint, machines, services),
       })
     ).rows;
     return groups(records, (r) => r[groupField ?? 'machine']);
   }
 
   async getRxNetowrkGapFillData(filter: TFilterIntervalReq) {
-    const { interval, totalPoint, machines, groupField } = filter;
+    const { interval, totalPoint, machines, groupField, services } = filter;
     const records: TResourceRecord[] = (
       await this.pgClient.query({
-        text: rxNetworkGapFillQuery(interval, totalPoint, machines),
+        text: rxNetworkGapFillQuery(interval, totalPoint, machines, services),
       })
     ).rows;
     return groups(records, (r) => r[groupField ?? 'machine']);
   }
 
   async getTxNetowrkGapFillData(filter: TFilterIntervalReq) {
-    const { interval, totalPoint, machines, groupField } = filter;
+    const { interval, totalPoint, machines, groupField, services } = filter;
     const records: TResourceRecord[] = (
       await this.pgClient.query({
-        text: txNetworkGapFillQuery(interval, totalPoint, machines),
+        text: txNetworkGapFillQuery(interval, totalPoint, machines, services),
       })
     ).rows;
     return groups(records, (r) => r[groupField ?? 'machine']);
