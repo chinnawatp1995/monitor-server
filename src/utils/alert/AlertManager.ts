@@ -22,7 +22,7 @@ export class AlertManager {
     for (const rule of rules) {
       let isPassThreshold = false;
       const machines = [];
-      if (rule.type === POSSIBLE_RULES.SERVER_DOWN) {
+      if (rule.type.toLowerCase() === POSSIBLE_RULES.SERVER_DOWN) {
         const rows = await this.getData(rule);
         const groupByMachine = groups(rows, ({ machine }) => machine);
         for (const [k, v] of Object.entries(groupByMachine)) {
@@ -55,6 +55,8 @@ export class AlertManager {
     });
     return result.rows;
   }
+
+  private checkHistory() {}
 
   private async createAlert(rule: any, param: string[]) {
     const notifies = await this.getNotifyHistory(rule.id, rule.silence_time);
