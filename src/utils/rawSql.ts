@@ -108,9 +108,9 @@ WITH request_deltas AS (
         machine,
         controller,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time) 
+            WHEN value < COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time), 0) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time)
+            ELSE value - COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time), 0)
         END AS requests_in_interval
     FROM
         request_count
@@ -179,6 +179,7 @@ export const getTotalRequestGapFill = (
   services?: string[],
   machineIds?: string[],
   controllers?: string[],
+  groupField = 'machine',
 ): string =>
   `
 WITH request_deltas AS (
@@ -189,9 +190,9 @@ WITH request_deltas AS (
         machine,
         controller,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time) 
+            WHEN value < COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time), 0)
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time)
+            ELSE value - COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time), 0)
         END AS requests_in_interval
     FROM
         request_count
@@ -215,13 +216,11 @@ WITH request_deltas AS (
 SELECT 
     time_bucket_gapfill(INTERVAL '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket,
     SUM(requests_in_interval) AS value,
-    machine,
-    controller,
-    service
+    ${groupField}
 FROM 
     request_deltas
 GROUP BY 
-    bucket, machine, service, controller
+    bucket, ${groupField}
 ORDER BY 
     bucket;
 `;
@@ -233,6 +232,7 @@ export const errorRate = (
   services?: string[],
   machineIds?: string[],
   controllers?: string[],
+  groupField = 'machine',
 ): string =>
   `
 WITH error_deltas AS (
@@ -244,9 +244,9 @@ WITH error_deltas AS (
         controller,
         error_title,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
+            WHEN value < COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time), 0)
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
+            ELSE value - COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time), 0)
         END AS errors_in_interval
     FROM
         error
@@ -270,14 +270,11 @@ WITH error_deltas AS (
 SELECT 
     time_bucket('${timeBucket}', time) AS bucket,
     SUM(errors_in_interval) AS value,
-    machine,
-    controller,
-    service,
-    error_title
+    ${groupField}
 FROM 
     error_deltas
 GROUP BY 
-    bucket, machine, service, controller, error_title
+    bucket, ${groupField}
 ORDER BY 
     bucket;
   `;
@@ -288,6 +285,7 @@ export const getErrorCountGapFill = (
   services?: string[],
   machineIds?: string[],
   controllers?: string[],
+  groupField = 'machine',
 ): string =>
   `
   WITH error_deltas AS (
@@ -299,9 +297,9 @@ export const getErrorCountGapFill = (
           controller,
           error_title,
           CASE
-              WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
+              WHEN value < COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time), 0)
               THEN value  
-              ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time)
+              ELSE value - COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, error_code, error_title ORDER BY time), 0)
           END AS errors_in_interval
       FROM
           error
@@ -327,14 +325,11 @@ export const getErrorCountGapFill = (
   SELECT 
       time_bucket_gapfill(INTERVAL '${interval}' / '${totalPoint}', time, now() - INTERVAL '${interval}', now()) AS bucket,
       SUM(errors_in_interval) AS value,
-      machine,
-      controller,
-      service,
-      error_title
+      ${groupField}
   FROM 
       error_deltas
   GROUP BY 
-      bucket, machine, service, controller, error_title
+      bucket, ${groupField}
   ORDER BY 
       bucket;
     `;
@@ -351,9 +346,9 @@ WITH error_deltas AS (
       error_title,
       error_code,
       CASE 
-        WHEN value < LAG(value) OVER (PARTITION BY path, service, machine, controller, error_code, error_title ORDER BY time) 
+        WHEN value < COALESCE(LAG(value) OVER (PARTITION BY path, service, machine, controller, error_code, error_title ORDER BY time), 0) 
         THEN value 
-        ELSE value - LAG(value) OVER (PARTITION BY path, service, machine, controller, error_code, error_title ORDER BY time) 
+        ELSE value - COALESCE(LAG(value) OVER (PARTITION BY path, service, machine, controller, error_code, error_title ORDER BY time), 0) 
       END AS errors_in_interval
     FROM error
     WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
@@ -375,13 +370,12 @@ export const getAverageResponseTime = (
   services?: string[],
   machineIds?: string[],
   controllers?: string[],
+  groupField = 'machine',
 ): string => `
 SELECT 
     time_bucket('${timeBucket}', time) AS bucket,
     SUM(sum) / SUM(count) AS value,
-    machine,
-    controller,
-    service
+    ${groupField}
 FROM 
     response_time
 WHERE time BETWEEN '${start}' AND '${end}'
@@ -400,7 +394,7 @@ WHERE time BETWEEN '${start}' AND '${end}'
         ? `AND controller IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
         : ''
     }
-GROUP BY bucket, machine, service, controller
+GROUP BY bucket, ${groupField}
 ORDER BY bucket;
 `;
 
@@ -410,13 +404,12 @@ export const getAverageResponseTimeGapFill = (
   services?: string[],
   machineIds?: string[],
   controllers?: string[],
+  groupField = 'machine',
 ): string => `
 SELECT 
     time_bucket_gapfill(INTERVAL '${interval}' / '${totalPoint}', time, now() - INTERVAL '${interval}', now()) AS bucket,
     SUM(sum) / SUM(count) AS value,
-    machine,
-    controller,
-    service
+    ${groupField}
 FROM 
     response_time
 WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
@@ -435,7 +428,7 @@ WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
         ? `AND controller IN  ( ${controllers.map((s) => `'${s}'`).join(',')})`
         : ''
     }
-GROUP BY bucket, machine, service, controller
+GROUP BY bucket, ${groupField}
 ORDER BY bucket;
 `;
 
@@ -515,7 +508,7 @@ export const rxNetworkQuery = (
   timeBucket: string,
   machineIds?: string[],
 ) => `
-SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS value, machine, service
+SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value)/1000000 AS value, machine, service
 FROM rx_network
 WHERE time BETWEEN '${start}' AND '${end}' 
     ${
@@ -532,7 +525,7 @@ export const rxNetworkGapFillQuery = (
   totalPoint: number,
   machineIds?: string[],
 ) => `
-SELECT time_bucket_gapfill(interval '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, AVG(value) AS value, machine, service
+SELECT time_bucket_gapfill(interval '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, AVG(value)/1000000 AS value, machine, service
 FROM rx_network
 WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
     ${
@@ -550,7 +543,7 @@ export const txNetworkQuery = (
   timeBucket: string,
   machineIds?: string[],
 ) => `
-SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value) AS value, machine, service
+SELECT time_bucket('${timeBucket}', time) AS bucket, AVG(value)/1000000 AS value, machine, service
 FROM tx_network
 WHERE time BETWEEN '${start}' AND '${end}'
     ${
@@ -567,7 +560,7 @@ export const txNetworkGapFillQuery = (
   totalPoint: number,
   machineIds?: string[],
 ) => `
-SELECT time_bucket_gapfill(interval '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, AVG(value) AS value, machine, service
+SELECT time_bucket_gapfill(interval '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, AVG(value)/1000000 AS value, machine, service
 FROM tx_network
 WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
     ${
@@ -579,12 +572,20 @@ GROUP BY bucket, machine, service
 ORDER BY bucket;
 `;
 
-export const getCurrentServerStatusQuery = (machineIds?: string[]) =>
+export const getCurrentServerStatusQuery = (
+  machineIds?: string[],
+  service?: string,
+) =>
   `SELECT DISTINCT ON (machine_id) machine_id, status, time ` +
   `FROM server_status ` +
   ((machineIds ?? []).length > 0
     ? `WHERE machine_id IN (${machineIds.map((m) => `'${m}'`).join(',')}) `
     : ``) +
+  (service
+    ? (machineIds ?? []).length > 0
+      ? `AND service = ${service}`
+      : `WHERE service = ${service}`
+    : '') +
   `ORDER BY machine_id, time DESC;`;
 
 export const serverTimeline = (
@@ -649,9 +650,9 @@ WITH request_deltas AS (
         machine,
         controller,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time) 
+            WHEN value < COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time), 0) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time)
+            ELSE value - COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time), 0)
         END AS requests_in_interval
     FROM
         request_count
@@ -695,9 +696,9 @@ export const getRequestErrorRatioGapFill = (
       machine,
       controller,
       CASE 
-        WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time)
+        WHEN value < COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time), 0)
         THEN value 
-        ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time)
+        ELSE value - COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time), 0)
       END AS requests_in_interval
     FROM request_count
     WHERE time >= now() - INTERVAL '${interval}' 
@@ -735,9 +736,9 @@ ht2 AS (
       controller,
       error_title,
       CASE 
-        WHEN value < LAG(value) OVER (PARTITION BY path, service, machine, controller, error_code, error_title ORDER BY time) 
+        WHEN value < COALESCE(LAG(value) OVER (PARTITION BY path, service, machine, controller, error_code, error_title ORDER BY time), 0) 
         THEN value 
-        ELSE value - LAG(value) OVER (PARTITION BY path, service, machine, controller, error_code, error_title ORDER BY time) 
+        ELSE value - COALESCE(LAG(value) OVER (PARTITION BY path, service, machine, controller, error_code, error_title ORDER BY time), 0) 
       END AS errors_in_interval
     FROM error
     WHERE time >= now() - INTERVAL '${interval}' 
@@ -782,9 +783,9 @@ export const getRequestPath = (services: string, interval = '1 week'): string =>
         machine,
         controller,
         CASE
-            WHEN value < LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time) 
+            WHEN value < COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time), 0) 
             THEN value  
-            ELSE value - LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time)
+            ELSE value - COALESCE(LAG(value) OVER (PARTITION BY service, machine, controller, path, status_code ORDER BY time), 0)
         END AS requests_in_interval
     FROM
         request_count

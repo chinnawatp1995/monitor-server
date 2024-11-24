@@ -12,6 +12,7 @@ export type TFilterReq = {
   machines?: string[];
   controllers: string[];
   resourceCollectionTimes?: number[];
+  groupField?: string;
 };
 
 export type TFilterIntervalReq = {
@@ -23,6 +24,7 @@ export type TFilterIntervalReq = {
   machines?: string[];
   controller?: string;
   controllers?: string[];
+  groupField?: string;
 };
 
 export type TMetricsReq = {

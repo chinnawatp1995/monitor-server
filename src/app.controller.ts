@@ -22,6 +22,14 @@ export class AppController {
     await this.appService.collectMetrics(body);
   }
 
+  @Get('heartbeat')
+  async heartbeat(
+    @Query('machineId') machineId: string,
+    @Query('service') service: string,
+  ) {
+    this.appService.heartbeat(machineId, service);
+  }
+
   @Get('services')
   async getService() {
     return await this.appService.getService();
