@@ -98,7 +98,11 @@ export class AppService {
     const alertManager = new AlertManager();
 
     setInterval(() => {
-      alertManager.checkRules();
+      try {
+        alertManager.checkRules();
+      } catch (e) {
+        console.log(e);
+      }
     }, 5000);
     // await testRuleParser();
   }
