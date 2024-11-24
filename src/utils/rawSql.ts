@@ -1032,3 +1032,8 @@ export const getRuleByIdQuery = (ruleId: number) =>
   `
   SELECT * FROM alert_rule WHERE id = ${ruleId}
 `;
+
+export const deleteNotifyHistory = (ruleId: number) =>
+  `
+  DELETE FROM notify_history WHERE rule_id = ${ruleId};
+`;

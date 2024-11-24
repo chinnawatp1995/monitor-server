@@ -17,6 +17,7 @@ import {
   createServerStatus,
   createTxNetworkQuery,
   deleteGroupQuery,
+  deleteNotifyHistory,
   deleteRecipientQuery,
   deleteRuleGroupByGroup,
   deleteRuleGroupByRule,
@@ -788,6 +789,9 @@ export class AppService {
       text: deleteRuleGroupByRule(ruleId),
     });
     await this.pgClient.query({
+      text: deleteNotifyHistory(ruleId),
+    });
+    await this.pgClient.query({
       text: deleteRuleQuery(ruleId),
     });
   }
@@ -910,6 +914,12 @@ export class AppService {
     const newServices = services.filter((s) => s !== service);
     await this.pgClient.query({
       text: updateAlertServiceQuery(ruleId, newServices),
+    });
+  }
+
+  async updateRuleService(ruleId: number, services: string[]) {
+    await this.pgClient.query({
+      text: updateAlertServiceQuery(ruleId, services),
     });
   }
 }

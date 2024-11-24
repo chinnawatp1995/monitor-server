@@ -174,10 +174,10 @@ export class AppController {
     return await this.appService.disableRule(ruleId);
   }
 
-  // @Get('delete-rule')
-  // async deleteRule(@Query('ruleId') ruleId: string) {
-  //   return await this.appService.deleteRule(ruleId);
-  // }
+  @Get('delete-rule')
+  async deleteRule(@Query('ruleId') ruleId: number) {
+    return await this.appService.deleteRule(ruleId);
+  }
 
   // @Get('remove-recipient-from-rule')
   // async removeRecipientFromRule(
@@ -234,6 +234,11 @@ export class AppController {
   @Post('remove-service-from-rule')
   async removeServiceFromRule(@Body() body: any) {
     return await this.appService.removeRuleService(body.ruleId, body.service);
+  }
+
+  @Post('update-service-to-rule')
+  async updateServiceToRule(@Body() body: any) {
+    return await this.appService.updateRuleService(body.ruleId, body.services);
   }
 
   @Post('update-rule')
