@@ -225,4 +225,19 @@ export class AppController {
   async updateGroupOfRule(@Body() body: any) {
     return await this.appService.updateGroupOfRule(body);
   }
+
+  @Post('add-service-to-rule')
+  async addServiceToRule(@Body() body: any) {
+    return await this.appService.addRuleService(body.ruleId, body.service);
+  }
+
+  @Post('remove-service-from-rule')
+  async removeServiceFromRule(@Body() body: any) {
+    return await this.appService.removeRuleService(body.ruleId, body.service);
+  }
+
+  @Post('update-rule')
+  async updateRule(@Body() body: any) {
+    return await this.appService.updateRule(body);
+  }
 }

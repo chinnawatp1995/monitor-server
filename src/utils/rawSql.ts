@@ -1007,3 +1007,28 @@ export const getGroupFromRuleQuery = (ruleId: number) =>
 `;
 
 export const getGroupQuery = () => `SELECT * FROM recipient_group`;
+
+export const updateRuleQuery = (rule: any) =>
+  `
+  UPDATE alert_rule 
+  SET
+    name = '${rule.name}',
+    threshold = ${rule.threshold},
+    message = E'${rule.message.replace(/'/g, "\\'")}',
+    duration = '${rule.duration}',
+    silence_time = '${rule.silence_time}'
+  WHERE
+    id = ${rule.id}
+`;
+
+export const updateAlertServiceQuery = (ruleId: number, services: string[]) =>
+  `
+  UPDATE alert_rule
+  SET service = '{${services.map((s) => `"${s}"`).join(',')}}'
+  WHERE id = ${ruleId}
+`;
+
+export const getRuleByIdQuery = (ruleId: number) =>
+  `
+  SELECT * FROM alert_rule WHERE id = ${ruleId}
+`;

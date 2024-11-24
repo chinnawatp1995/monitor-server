@@ -31,6 +31,7 @@ import {
   getRecipientsFromGroup,
   getRequestErrorRatioGapFill,
   getRequestPath,
+  getRuleByIdQuery,
   getRulesQuery,
   getTotalRequestGapFill,
   memGapFillQuery,
@@ -39,7 +40,9 @@ import {
   rxNetworkGapFillQuery,
   serverTimeline,
   txNetworkGapFillQuery,
+  updateAlertServiceQuery,
   updateRecipientToGroupQuery,
+  updateRuleQuery,
   updateRuleStatusQuery,
 } from './utils/rawSql';
 import { fillMissingBuckets, groups } from './utils/util-functions';
@@ -874,5 +877,39 @@ export class AppService {
         groupIds: [...removedGroup],
       });
     }
+  }
+
+  async updateRule(rule: any) {
+    // const { id, name, threshold,  message, duration, silence_time, } = rule
+    await this.pgClient.query({
+      text: updateRuleQuery(rule),
+    });
+  }
+
+  async addRuleService(ruleId: number, service: string) {
+    const services = (
+      await this.pgClient.query({
+        text: getRuleByIdQuery(ruleId),
+      })
+    ).rows[0].service;
+
+    const serviceSet = new Set(services).add(service);
+
+    await this.pgClient.query({
+      text: updateAlertServiceQuery(ruleId, [...serviceSet] as string[]),
+    });
+  }
+
+  async removeRuleService(ruleId: number, service: string) {
+    const services = (
+      await this.pgClient.query({
+        text: getRuleByIdQuery(ruleId),
+      })
+    ).rows[0].service;
+
+    const newServices = services.filter((s) => s !== service);
+    await this.pgClient.query({
+      text: updateAlertServiceQuery(ruleId, newServices),
+    });
   }
 }
