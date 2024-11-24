@@ -455,6 +455,7 @@ export const cpuGapFillQuery = (
   interval: string,
   totalPoint: number,
   machineIds?: string[],
+  services?: string[],
 ): string => `
 SELECT time_bucket_gapfill(interval '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, AVG(value) AS value, machine, service
 FROM cpu
@@ -464,6 +465,11 @@ WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
         ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
         : ''
     }
+     ${
+       (services ?? []).length > 0
+         ? `AND service IN  ( ${services.map((s) => `'${s}'`).join(',')})`
+         : ''
+     }
 GROUP BY bucket, machine, service
 ORDER BY bucket;
 `;
@@ -490,6 +496,7 @@ export const memGapFillQuery = (
   interval: string,
   totalPoint: number,
   machineIds?: string[],
+  services?: string[],
 ) => `
 SELECT time_bucket_gapfill(INTERVAL '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, AVG(value) AS value, machine, service
 FROM mem
@@ -497,6 +504,11 @@ WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
     ${
       (machineIds ?? []).length > 0
         ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      (services ?? []).length > 0
+        ? `AND service IN  ( ${services.map((s) => `'${s}'`).join(',')})`
         : ''
     }
 GROUP BY bucket, machine, service
@@ -525,6 +537,7 @@ export const rxNetworkGapFillQuery = (
   interval: string,
   totalPoint: number,
   machineIds?: string[],
+  services?: string[],
 ) => `
 SELECT time_bucket_gapfill(interval '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, AVG(value)/1000000 AS value, machine, service
 FROM rx_network
@@ -532,6 +545,11 @@ WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
     ${
       (machineIds ?? []).length > 0
         ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      (services ?? []).length > 0
+        ? `AND service IN  ( ${services.map((s) => `'${s}'`).join(',')})`
         : ''
     }
 GROUP BY bucket, machine, service
@@ -560,6 +578,7 @@ export const txNetworkGapFillQuery = (
   interval: string,
   totalPoint: number,
   machineIds?: string[],
+  services?: string[],
 ) => `
 SELECT time_bucket_gapfill(interval '${interval}' / ${totalPoint}, time, now() - INTERVAL '${interval}', now()) AS bucket, AVG(value)/1000000 AS value, machine, service
 FROM tx_network
@@ -567,6 +586,11 @@ WHERE time >= now() - INTERVAL '${interval}' AND time <= now()
     ${
       (machineIds ?? []).length > 0
         ? `AND machine IN  ( ${machineIds.map((s) => `'${s}'`).join(',')})`
+        : ''
+    }
+    ${
+      (services ?? []).length > 0
+        ? `AND service IN  ( ${services.map((s) => `'${s}'`).join(',')})`
         : ''
     }
 GROUP BY bucket, machine, service
