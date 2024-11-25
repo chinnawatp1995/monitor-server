@@ -859,26 +859,25 @@ export class AppService {
       })
     ).rows.map((r) => Number(r.id));
 
-    const existingGroupSet = new Set(existingGroup);
-    const addedGroup = (
-      new Set(param.groupIds.map((g) => Number(g))) as any
-    ).difference(existingGroupSet);
+    const parsedGroupIds = param.groupIds.map((p) => Number(p));
 
-    const removedGroup = (existingGroupSet as any).difference(
-      new Set(param.groupIds.map((g) => Number(g))),
+    const addedGroup = parsedGroupIds.filter((p) => !existingGroup.includes(p));
+
+    const removedGroup = existingGroup.filter(
+      (p) => !parsedGroupIds.includes(p),
     );
 
-    if ([...addedGroup].length > 0) {
+    if (addedGroup.length > 0) {
       await this.addGroupToRule({
         ruleId: param.ruleId,
-        groupIds: [...addedGroup],
+        groupIds: addedGroup,
       });
     }
 
-    if ([...removedGroup].length > 0) {
+    if (removedGroup.length > 0) {
       await this.removeGroupFromRule({
         ruleId: param.ruleId,
-        groupIds: [...removedGroup],
+        groupIds: removedGroup,
       });
     }
   }
