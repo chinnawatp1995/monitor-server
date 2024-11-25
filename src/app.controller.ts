@@ -199,10 +199,11 @@ export class AppController {
   //   return await this.appService.removeRecipient(recipientId);
   // }
 
-  // @Post('request-error-ratio')
-  // async getReqErrRatio(@Body() filter: TFilterIntervalReq) {
-  //   return await this.appService.getRequestErrorRatioGapFill(filter);
-  // }
+  @Post('request-error-ratio')
+  async getReqErrRatio(@Body() filter: TFilterIntervalReq) {
+    return await this.appService.getRequestErrorRatioGapFill(filter);
+  }
+
   @Post('create-group')
   async createGroup(@Body() body: { groupId: number; recipients: number[] }) {
     return this.appService.createGroup(body);
