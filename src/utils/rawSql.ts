@@ -1061,3 +1061,5 @@ export const deleteNotifyHistory = (ruleId: number) =>
   `
   DELETE FROM notify_history WHERE rule_id = ${ruleId};
 `;
+
+export const getAllRecipientQuery = () => `SELECT * FROM recipient`;

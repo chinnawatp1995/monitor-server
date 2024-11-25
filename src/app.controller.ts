@@ -132,6 +132,13 @@ export class AppController {
     return await this.appService.addRecipientToGroup(body);
   }
 
+  @Post('update-recipient-to-group')
+  async updateRecipientToGroup(
+    @Body() body: { groupId: number; recipients: number[] },
+  ) {
+    return await this.appService.updateRecipientToGroup(body);
+  }
+
   @Post('remove-recipient-from-group')
   async removeRecipientFromGroup(
     @Body() body: { groupId: number; recipients: number[] },
@@ -244,5 +251,10 @@ export class AppController {
   @Post('update-rule')
   async updateRule(@Body() body: any) {
     return await this.appService.updateRule(body);
+  }
+
+  @Get('recipients')
+  async getRecipients(@Body() body: any) {
+    return await this.appService.getAllRecipients();
   }
 }

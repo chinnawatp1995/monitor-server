@@ -24,6 +24,7 @@ import {
   deleteRuleQuery,
   errorRanking,
   errorRate,
+  getAllRecipientQuery,
   getAverageResponseTimeGapFill,
   getCurrentServerStatusQuery,
   getGroupFromRuleQuery,
@@ -698,10 +699,19 @@ export class AppService {
   }
 
   async createRecipient(recipient: any) {
+    const data = {
+      name: recipient.name,
+      detail: {
+        app: recipient.app,
+        url: recipient.url,
+        room: recipient.room,
+        token: recipient.token,
+      },
+    };
     await this.pgClient.query({
       text: createRecipientQuery({
-        name: recipient.name,
-        detail: JSON.stringify(recipient.detail),
+        name: data.name,
+        detail: JSON.stringify(data.detail),
       }),
     });
   }
@@ -728,6 +738,14 @@ export class AppService {
     return recipient.recipients;
   }
 
+  async getAllRecipients() {
+    return (
+      await this.pgClient.query({
+        text: getAllRecipientQuery(),
+      })
+    ).rows;
+  }
+
   async addRecipientToGroup(param: { recipients: number[]; groupId: number }) {
     const oldRecipient = (
       await this.pgClient.query({
@@ -735,7 +753,10 @@ export class AppService {
       })
     ).rows[0].recipients.map((r) => Number(r));
 
-    const recipientSet = new Set(param.recipients);
+    const newRecipient = [
+      ...oldRecipient,
+      param.recipients.map((r) => Number(r)),
+    ];
 
     // console.log(
     //   updateRecipientToGroupQuery(
@@ -745,10 +766,7 @@ export class AppService {
     // );
 
     await this.pgClient.query({
-      text: updateRecipientToGroupQuery(
-        [...(recipientSet as any).union(new Set(oldRecipient))],
-        param.groupId,
-      ),
+      text: updateRecipientToGroupQuery(newRecipient, param.groupId),
     });
   }
 
@@ -762,14 +780,40 @@ export class AppService {
       })
     ).rows[0].recipients.map((r) => Number(r));
 
-    const recipientSet = new Set(param.recipients);
-
+    const parsedRecipients = param.recipients.map((r) => Number(r));
+    const newRecipient = oldRecipient.filter(
+      (orcp) => !parsedRecipients.includes(orcp),
+    );
     await this.pgClient.query({
-      text: updateRecipientToGroupQuery(
-        [...(new Set(oldRecipient) as any).difference(recipientSet)],
-        param.groupId,
-      ),
+      text: updateRecipientToGroupQuery(newRecipient, param.groupId),
     });
+  }
+
+  async updateRecipientToGroup(param: any) {
+    const { groupId, recipients } = param;
+
+    const rcpIds = (
+      await this.pgClient.query({
+        text: getRecipientsFromGroup(groupId),
+      })
+    ).rows[0].recipients.map((rcp) => Number(rcp));
+
+    const parseRecipients = recipients.map((r) => Number(r));
+    const addedRecipients = parseRecipients.filter((r) => !rcpIds.includes(r));
+    const removedRecipients = rcpIds.filter(
+      (r) => !parseRecipients.includes(r),
+    );
+
+    if (addedRecipients.length > 0) {
+      await this.addRecipientToGroup({ recipients: addedRecipients, groupId });
+    }
+
+    if (removedRecipients.length > 0) {
+      await this.removeRecipientFromGroup({
+        recipients: removedRecipients,
+        groupId,
+      });
+    }
   }
 
   async enableRule(ruleId: number) {
